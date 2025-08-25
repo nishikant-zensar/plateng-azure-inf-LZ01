@@ -1,0 +1,16 @@
+# KICS Ignore File
+# Use this file to ignore specific findings that are false positives or accepted risks
+# Format: query_id:file_path:line_number
+# You can also use wildcards (*) for broader matches
+
+# Example entries (remove these and add your own):
+# 57b9893d-33b1-4419-bcea-b828fb87e318:*:*  # Ignore specific query across all files
+# *:cloudformation/sandbox/account/*:*       # Ignore all findings in specific path
+# 589ce1d9-bc6b-4c06-bdb7-007f4c4d2151:cloudformation/sandbox/security-infra/security-services-template.yml:245
+
+# Common AWS CloudFormation findings that might be acceptable:
+# 57b9893d-33b1-4419-bcea-b828fb87e318  # S3 Bucket Without Versioning
+# 7af43613-6bb9-4a0e-8c4d-1314b799425e  # S3 Bucket Without Server Side Encryption
+# 75c5b2e1-ff8e-4065-8c64-67fb96a99a87  # CloudTrail Not Encrypted
+# 16509867-ac14-46a5-8a95-e102c5a88c49  # Security Group With All Traffic
+# 4728cd65-a20c-49da-8b31-9c5df63b8f14  # EC2 Instance Without Monitoring

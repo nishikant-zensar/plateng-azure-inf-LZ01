@@ -1,0 +1,526 @@
+name: Landing Zone Deployment
+on:
+  workflow_dispatch:
+    inputs:
+      jobToRun:
+        description: 'Select Job'
+        required: true
+        default: 'Bootstrap'
+        type: choice
+        options:
+          - Bootstrap
+          - CreateManagementGroups
+          - DeployHubSpoke
+          - DeployNetworking
+          - DeployServices
+          - DeployRules
+          - DeployPolicies
+env:
+  terraformVersion: '1.8.0'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  Bootstrap:
+    if: ${{ github.event.inputs.jobToRun == 'Bootstrap' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+     
+      - name: Run bootstrap script for creating storage for statefile    
+        run: |
+          chmod +x modules/managementgroups/bootstrap.sh
+          modules/managementgroups/bootstrap.sh
+
+  CreateManagementGroups:
+    if: ${{ github.event.inputs.jobToRun == 'CreateManagementGroups' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: managementgroups.terraform.tfstate
+        run: |
+          cd modules/managementgroups
+          terraform init \
+            -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
+            -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
+            -backend-config="container_name=${TF_VAR_backend_container_name}" \
+            -backend-config="key=${TF_VAR_backend_key}"
+
+      - name: Terraform Plan management groups
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: managementgroups.terraform.tfstate
+        run: |
+          cd modules/managementgroups
+          terraform plan -out=tfplan
+          terraform show -no-color tfplan > plan.txt  
+
+      - name: Upload .terraform.lock.hcl
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-workspace
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/modules/managementgroups/.terraform.lock.hcl
+          include-hidden-files: true
+
+      - name: Upload plan.txt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-txt-artifact
+          path: modules/managementgroups/plan.txt
+
+      - name: Upload tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: modules/managementgroups/tfplan
+
+      - name: Terraform Apply management groups
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: managementgroups.terraform.tfstate
+        run: |
+          cd modules/managementgroups
+          terraform apply -auto-approve tfplan
+
+  DeployHubSpoke:
+    if: ${{ github.event.inputs.jobToRun == 'DeployHubSpoke' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: hubspoke.terraform.tfstate
+        run: |
+          cd modules/hubandspoke
+          terraform init \
+            -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
+            -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
+            -backend-config="container_name=${TF_VAR_backend_container_name}" \
+            -backend-config="key=${TF_VAR_backend_key}"
+
+      - name: Terraform Plan Hub & Spoke
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: hubspoke.terraform.tfstate
+        run: |
+          cd modules/hubandspoke
+          terraform plan -out=tfplan
+          terraform show -no-color tfplan > plan.txt  
+
+      - name: Upload .terraform.lock.hcl
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-workspace
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/modules/hubandspoke/.terraform.lock.hcl
+          include-hidden-files: true
+
+      - name: Upload plan.txt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-txt-artifact
+          path: modules/hubandspoke/plan.txt
+
+      - name: Upload tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: modules/hubandspoke/tfplan
+
+      - name: Terraform Apply management groups
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: hubspoke.terraform.tfstate
+        run: |
+          cd modules/hubandspoke
+          terraform apply -auto-approve tfplan
+    
+  DeployNetworking:
+    if: ${{ github.event.inputs.jobToRun == 'DeployNetworking' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: networking.terraform.tfstate
+        run: |
+          cd modules/networking
+          terraform init \
+            -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
+            -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
+            -backend-config="container_name=${TF_VAR_backend_container_name}" \
+            -backend-config="key=${TF_VAR_backend_key}"
+
+      - name: Terraform Plan networking
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: networking.terraform.tfstate
+        run: |
+          cd modules/networking
+          terraform plan -out=tfplan
+          terraform show -no-color tfplan > plan.txt  
+
+      - name: Upload .terraform.lock.hcl
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-workspace
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/modules/networking/.terraform.lock.hcl
+          include-hidden-files: true
+
+      - name: Upload plan.txt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-txt-artifact
+          path: modules/networking/plan.txt
+
+      - name: Upload tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: modules/networking/tfplan
+
+      - name: Terraform Apply Networking
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: networking.terraform.tfstate
+        run: |
+          cd modules/networking
+          terraform apply -auto-approve tfplan
+
+  DeployServices:
+    if: ${{ github.event.inputs.jobToRun == 'DeployServices' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: azservices.terraform.tfstate
+        run: |
+          cd modules/azureservices
+          terraform init \
+            -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
+            -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
+            -backend-config="container_name=${TF_VAR_backend_container_name}" \
+            -backend-config="key=${TF_VAR_backend_key}"
+
+      - name: Terraform Plan Azure Services
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: azservices.terraform.tfstate
+        run: |
+          cd modules/azureservices
+          terraform plan -out=tfplan
+          terraform show -no-color tfplan > plan.txt  
+
+      - name: Upload .terraform.lock.hcl
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-workspace
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/modules/azureservices/.terraform.lock.hcl
+          include-hidden-files: true
+
+      - name: Upload plan.txt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-txt-artifact
+          path: modules/azureservices/plan.txt
+
+      - name: Upload tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: modules/azureservices/tfplan
+
+      - name: Terraform Apply Azure Services
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: azservices.terraform.tfstate
+        run: |
+          cd modules/azureservices
+          terraform apply -auto-approve tfplan
+
+  DeployRules:
+    if: ${{ github.event.inputs.jobToRun == 'DeployRules' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: netrules.terraform.tfstate
+        run: |
+          cd modules/networkrules
+          terraform init \
+            -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
+            -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
+            -backend-config="container_name=${TF_VAR_backend_container_name}" \
+            -backend-config="key=${TF_VAR_backend_key}"
+
+      - name: Terraform Plan Network Rules
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: netrules.terraform.tfstate
+        run: |
+          cd modules/networkrules
+          terraform plan -out=tfplan
+          terraform show -no-color tfplan > plan.txt  
+
+      - name: Upload .terraform.lock.hcl
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-workspace
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/modules/networkrules/.terraform.lock.hcl
+          include-hidden-files: true
+
+      - name: Upload plan.txt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-txt-artifact
+          path: modules/networkrules/plan.txt
+
+      - name: Upload tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: modules/networkrules/tfplan
+
+      - name: Terraform Apply Network Rules
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: netrules.terraform.tfstate
+        run: |
+          cd modules/networkrules
+          terraform apply -auto-approve tfplan
+  
+  DeployPolicies:
+    if: ${{ github.event.inputs.jobToRun == 'DeployPolicies' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: cispolicies.terraform.tfstate
+        run: |
+          cd modules/policies
+          terraform init \
+            -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
+            -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
+            -backend-config="container_name=${TF_VAR_backend_container_name}" \
+            -backend-config="key=${TF_VAR_backend_key}"
+
+      - name: Terraform Plan CIS Policies
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: cispolicies.terraform.tfstate
+        run: |
+          cd modules/policies
+          terraform plan -out=tfplan
+          terraform show -no-color tfplan > plan.txt  
+
+      - name: Upload .terraform.lock.hcl
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-workspace
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/modules/policies/.terraform.lock.hcl
+          include-hidden-files: true
+
+      - name: Upload plan.txt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-txt-artifact
+          path: modules/policies/plan.txt
+
+      - name: Upload tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: modules/policies/tfplan
+
+      - name: Terraform Apply Network Rules
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: cispolicies.terraform.tfstate
+        run: |
+          cd modules/policies
+          terraform apply -auto-approve tfplan

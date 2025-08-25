@@ -1,0 +1,116 @@
+#!/bin/bash
+# Pre-commit hook for KICS security scanning
+# This script runs KICS scan on staged files before commit
+
+echo "🔒 Running KICS security scan on staged files..."
+
+# Get list of staged CloudFormation and other IaC files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(yml|yaml|json|tf|dockerfile)$' || true)
+
+if [ -z "$STAGED_FILES" ]; then
+    echo "✅ No Infrastructure as Code files staged for commit"
+    exit 0
+fi
+
+echo "📁 Scanning staged files:"
+for file in $STAGED_FILES; do
+    echo "   - $file"
+done
+
+# Create temporary directory for scan results
+TEMP_DIR=$(mktemp -d)
+TEMP_RESULTS="$TEMP_DIR/kics-results"
+
+# Run KICS scan on staged files only
+if command -v kics &> /dev/null; then
+    KICS_CMD="kics"
+elif [ -f "./tools/kics/kics" ]; then
+    KICS_CMD="./tools/kics/kics"
+else
+    echo "⚠️  KICS not found. Installing KICS..."
+    # Run the installation script
+    if [ -f "./scripts/run-kics-scan.sh" ]; then
+        ./scripts/run-kics-scan.sh --skip-download 2>/dev/null || true
+        KICS_CMD="./tools/kics/kics"
+    else
+        echo "❌ Could not find or install KICS. Skipping security scan."
+        echo "   Run './scripts/run-kics-scan.sh' to install KICS"
+        exit 0
+    fi
+fi
+
+# Scan each staged file
+HIGH_ISSUES=0
+MEDIUM_ISSUES=0
+SCAN_FAILED=false
+
+for file in $STAGED_FILES; do
+    if [ -f "$file" ]; then
+        echo "🔍 Scanning $file..."
+        
+        if $KICS_CMD scan \
+            --path "$file" \
+            --output-path "$TEMP_RESULTS" \
+            --output-name "$(basename "$file" | sed 's/\.[^.]*$//')" \
+            --report-formats "json" \
+            --cloud-provider "aws" \
+            --silent 2>/dev/null; then
+            
+            # Parse results
+            RESULT_FILE="$TEMP_RESULTS/$(basename "$file" | sed 's/\.[^.]*$//').json"
+            if [ -f "$RESULT_FILE" ] && command -v jq &> /dev/null; then
+                FILE_HIGH=$(jq -r '.severity_counters.HIGH // 0' "$RESULT_FILE")
+                FILE_MEDIUM=$(jq -r '.severity_counters.MEDIUM // 0' "$RESULT_FILE")
+                
+                HIGH_ISSUES=$((HIGH_ISSUES + FILE_HIGH))
+                MEDIUM_ISSUES=$((MEDIUM_ISSUES + FILE_MEDIUM))
+                
+                if [ "$FILE_HIGH" -gt 0 ] || [ "$FILE_MEDIUM" -gt 0 ]; then
+                    echo "   ⚠️  Found $FILE_HIGH high and $FILE_MEDIUM medium severity issues"
+                else
+                    echo "   ✅ No high or medium severity issues found"
+                fi
+            fi
+        else
+            echo "   ❌ Failed to scan $file"
+            SCAN_FAILED=true
+        fi
+    fi
+done
+
+# Clean up
+rm -rf "$TEMP_DIR"
+
+# Report results
+echo ""
+echo "📊 Pre-commit Security Scan Summary:"
+echo "   High severity issues: $HIGH_ISSUES"
+echo "   Medium severity issues: $MEDIUM_ISSUES"
+
+# Decide whether to block commit
+if [ "$HIGH_ISSUES" -gt 0 ]; then
+    echo ""
+    echo "❌ COMMIT BLOCKED: High severity security issues found!"
+    echo "   Please fix the security issues before committing."
+    echo "   Run './scripts/run-kics-scan.ps1' for detailed results."
+    echo ""
+    echo "   To bypass this check (not recommended):"
+    echo "   git commit --no-verify"
+    exit 1
+elif [ "$MEDIUM_ISSUES" -gt 0 ]; then
+    echo ""
+    echo "⚠️  WARNING: Medium severity security issues found!"
+    echo "   Consider fixing these issues before committing."
+    echo "   Run './scripts/run-kics-scan.ps1' for detailed results."
+    echo ""
+    echo "   To proceed anyway, run: git commit --no-verify"
+    exit 1
+elif [ "$SCAN_FAILED" = true ]; then
+    echo ""
+    echo "⚠️  WARNING: Some files failed to scan."
+    echo "   Please check the KICS installation and try again."
+    exit 0
+else
+    echo "✅ All staged files passed security scan!"
+    exit 0
+fi
