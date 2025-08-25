@@ -25,9 +25,14 @@ resource "azurerm_resource_group" "conn" {
   provider = azurerm.ims-prd-connectivity
   name     = "ims-prd-conn-ne-rg-network"
   location = var.location
+  # tags = {
+   # Name        = "ims-prd-conn-ne-rg-network"
+   # Environment = "prd"
+   # DateCreated = "2025-08-01"
+  # }
   tags = {
-    Name        = "ims-prd-conn-ne-rg-network"
-    Environment = "prd"
-    DateCreated = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-${var.suffix}"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
-  }
+}

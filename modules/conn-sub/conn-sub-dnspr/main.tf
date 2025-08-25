@@ -10,9 +10,9 @@ resource "azurerm_private_dns_resolver" "dnspr" {
   virtual_network_id  = "/subscriptions/ecd60543-12a0-4899-9e5f-21ec01592207/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-conn-ne-vnet-hub-01"
 
   tags = {
-    Name          = "ims-prd-conn-ne-dnspr-01"
-    Environment   = "prd"
-    DateCreated   = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service3}-01"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 # Create DNS Private Resolver Inbound Endpoint
@@ -28,12 +28,12 @@ resource "azurerm_private_dns_resolver_inbound_endpoint" "inboundep" {
     private_ip_allocation_method  = "Static"
     private_ip_address            = "192.168.0.132"
   }
-
   tags = {
-    Name          = "ims-prd-conn-ne-in-dnspr"
-    Environment   = "prd"
-    DateCreated   = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.inout}-${var.service3}"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
+
 }
 # Create DNS Private Resolver Outbound Endpoint
 resource "azurerm_private_dns_resolver_outbound_endpoint" "outboundep" {
@@ -44,9 +44,9 @@ resource "azurerm_private_dns_resolver_outbound_endpoint" "outboundep" {
   subnet_id           = "/subscriptions/ecd60543-12a0-4899-9e5f-21ec01592207/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-conn-ne-vnet-hub-01/subnets/ims-prd-conn-ne-snet-dnsprout"
 
   tags = {
-    Name          = "ims-prd-conn-ne-out-dnspr"
-    Environment   = "prd"
-    DateCreated   = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.inout2}-${var.service3}"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 

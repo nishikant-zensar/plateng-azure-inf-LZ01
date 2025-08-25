@@ -36,10 +36,15 @@ resource "azurerm_virtual_network" "hubvnet" {
     enforcement = "AllowUnencrypted" 
   }
 
+  # tags = {
+   # Name        = "ims-prd-conn-ne-vnet-hub-01"
+   # Environment = "prd"
+   # DateCreated = "2025-08-01"
+  # }
   tags = {
-    Name        = "ims-prd-conn-ne-vnet-hub-01"
-    Environment = "prd"
-    DateCreated = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service}-${var.hubspoke}-01"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 

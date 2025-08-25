@@ -39,17 +39,23 @@ resource "azurerm_public_ip" "pipafw01" {
 
   # DDoS protection is only available for Standard SKU
   # ddos_protection_mode = var.ddos_protection_mode
+  # tags = {
+   # Name          = "ims-prd-conn-ne-pip-afw-01"
+   # Environment   = "prd"
+   # DateCreated   = "2025-08-01"
+  # }
   tags = {
-    Name          = "ims-prd-conn-ne-pip-afw-01"
-    Environment   = "prd"
-    DateCreated   = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service2}-${var.azfw}-01"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
+
 }
 
-#########################
+##################
 # Create IP Groups
-#########################
-# 1. Create IP Group for Zscaller IP Groups at Londeon 3
+##################
+# 1. Create IP Group for Zscaller IP Groups at London 3
 resource "azurerm_ip_group" "ims-prd-conn-ne-ZscallerIPg-L3" {
   provider            = azurerm.ims-prd-connectivity
   name                = "ims-prd-conn-ne-ZscallerIPg-L3"
@@ -65,14 +71,13 @@ resource "azurerm_ip_group" "ims-prd-conn-ne-ZscallerIPg-L3" {
   ]
 
   tags = {
-    name          = "ims-prd-conn-ne-ZscallerIPg-L3"
-    environment   = "prd"
-    function      = "ipgroup"
-    data_creation = "2025-07-21"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.ipg}-L3"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 
-# 2. Create IP Group for Zscaller IP Groups at Londeon 5
+# 2. Create IP Group for Zscaller IP Groups at London 5
 resource "azurerm_ip_group" "ims-prd-conn-ne-ZscallerIPg-L5" {
   provider            = azurerm.ims-prd-connectivity
   name                = "ims-prd-conn-ne-ZscallerIPg-L5"
@@ -88,10 +93,9 @@ resource "azurerm_ip_group" "ims-prd-conn-ne-ZscallerIPg-L5" {
   ]
   
   tags = {
-    name          = "ims-prd-conn-ne-ZscallerIPg-L5"
-    environment   = "prd"
-    function      = "ipgroup"
-    data_creation = "2025-07-21"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.ipg}-L5"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 
@@ -111,10 +115,9 @@ resource "azurerm_ip_group" "ims-prd-conn-ne-ZscallerIPg-M1" {
   ]
 
   tags = {
-    name          = "ims-prd-conn-ne-ZscallerIPg-M1"
-    environment   = "prd"
-    function      = "ipgroup"
-    data_creation = "2025-07-21"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.ipg}-M1"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
   
 }
@@ -134,10 +137,9 @@ resource "azurerm_ip_group" "ims-prd-conn-ne-ZscallerIPg-M2" {
   ]
 
   tags = {
-    name          = "ims-prd-conn-ne-ZscallerIPg-M2"
-    environment   = "prd"
-    function      = "ipgroup"
-    data_creation = "2025-07-21"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.ipg}-M2"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 
