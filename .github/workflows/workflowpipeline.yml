@@ -8,12 +8,25 @@ on:
         default: 'Bootstrap'
         type: choice
         options:
-          - Bootstrap
-          - CreateManagementGroups
-          - DeployHubSpoke
-          - DeployNetworking
-          - DeployServices
-          - DeployRules
+          - ConnectivityBootstrap
+          - ManagementBootstrap
+          - AvdBootstrap
+          - MgmtGroupBootstrap
+          - ImportManagementGroups
+          - ConnRGs
+          - ConnvNet
+          - ConnFirewall
+          - ConnVPG
+          - ConnDNSPR
+          - ConnNetwork
+          - MgmtRGs
+          - MgmtvNet
+          - MgmtKV&LogAnalytics
+          - MgmtNetwork
+          - AvdRGs
+          - AvdvNet
+          - AvdNetwork
+          - VnetPeering
           - DeployPolicies
 env:
   terraformVersion: '1.8.0'
@@ -21,10 +34,11 @@ env:
 permissions:
   id-token: write
   contents: read
+  issues: write
 
 jobs:
-  Bootstrap:
-    if: ${{ github.event.inputs.jobToRun == 'Bootstrap' }}
+  Conn Bootstrap:
+    if: ${{ github.event.inputs.jobToRun == 'ConnectivityBootstrap' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -42,11 +56,78 @@ jobs:
      
       - name: Run bootstrap script for creating storage for statefile    
         run: |
-          chmod +x modules/managementgroups/bootstrap.sh
-          modules/managementgroups/bootstrap.sh
+          chmod +x modules/bootstrap/bootstrap-conn.sh
+          modules/bootstrap/bootstrap-conn.sh
+    
+  Mgmt Bootstrap:
+    if: ${{ github.event.inputs.jobToRun == 'ManagementBootstrap' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  CreateManagementGroups:
-    if: ${{ github.event.inputs.jobToRun == 'CreateManagementGroups' }}
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+     
+      - name: Run bootstrap script for creating storage for statefile    
+        run: |
+          chmod +x modules/bootstrap/bootstrap-mgmt.sh
+          modules/bootstrap/bootstrap-mgmt.sh
+
+  Avd Bootstrap:
+    if: ${{ github.event.inputs.jobToRun == 'AvdBootstrap' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+     
+      - name: Run bootstrap script for creating storage for statefile    
+        run: |
+          chmod +x modules/bootstrap/bootstrap-avd.sh
+          modules/bootstrap/bootstrap-avd.sh
+
+  Mgmt Grp Bootstrap:
+    if: ${{ github.event.inputs.jobToRun == 'MgmtGroupBootstrap' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+     
+      - name: Run bootstrap script for creating storage for statefile    
+        run: |
+          chmod +x modules/bootstrap/bootstrap-mggrp.sh
+          modules/bootstrap/bootstrap-mggrp.sh
+
+  # Import Management Groups
+  ImportManagementGroups:
+    if: ${{ github.event.inputs.jobToRun == 'ImportManagementGroups' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -70,7 +151,7 @@ jobs:
           TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
           TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
           TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
-          TF_VAR_backend_key: managementgroups.terraform.tfstate
+          TF_VAR_backend_key: mgmtgrp.terraform.tfstate
         run: |
           cd modules/managementgroups
           terraform init \
@@ -78,6 +159,54 @@ jobs:
             -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
             -backend-config="container_name=${TF_VAR_backend_container_name}" \
             -backend-config="key=${TF_VAR_backend_key}"
+
+      - name: Terraform Import
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: mgmtgrp.terraform.tfstate
+        run: |
+          cd modules/managementgroups
+          # Import the root management group
+          terraform import azurerm_management_group.TescoIMSRootMG /providers/Microsoft.Management/managementGroups/IMS-Root
+ 
+          # Import 1st level child management groups
+
+          terraform import azurerm_management_group.ims-root-platform /providers/Microsoft.Management/managementGroups/ims-root-platform
+
+          terraform import azurerm_management_group.ims-root-environments /providers/Microsoft.Management/managementGroups/ims-root-environments
+
+          terraform import azurerm_management_group.ims-root-sandbox /providers/Microsoft.Management/managementGroups/ims-root-sandbox
+
+          terraform import azurerm_management_group.ims-root-decommission /providers/Microsoft.Management/managementGroups/ims-root-decommission
+          
+          # Import child management groups under platform
+
+          terraform import azurerm_management_group.ims-platform-prd /providers/Microsoft.Management/managementGroups/ims-platform-prd
+
+          terraform import azurerm_management_group.ims-platform-ppte /providers/Microsoft.Management/managementGroups/ims-platform-ppte
+          
+          # Import child management groups under environments
+
+          terraform import azurerm_management_group.ims-env-dev /providers/Microsoft.Management/managementGroups/ims-env-dev
+
+          terraform import azurerm_management_group.ims-env-ppe /providers/Microsoft.Management/managementGroups/ims-env-ppe
+
+          terraform import azurerm_management_group.ims-env-test /providers/Microsoft.Management/managementGroups/ims-env-test
+
+          terraform import azurerm_management_group.ims-env-prd /providers/Microsoft.Management/managementGroups/ims-env-prd
+          
+          # Import subscription associations
+
+          terraform import azurerm_management_group_subscription_association.ims-platform-prd-Connectivity /providers/Microsoft.Management/managementGroups/ims-platform-prd/subscriptions/e94722d2-c9ad-4121-b3c2-9a27c2281f21
+
+          terraform import azurerm_management_group_subscription_association.ims-platform-prd-management /providers/Microsoft.Management/managementGroups/ims-platform-prd/subscriptions/04445c61-01f9-437d-9f74-9b136a5db29f
+
+          terraform import azurerm_management_group_subscription_association.ims-env-prd-avd /providers/Microsoft.Management/managementGroups/ims-env-prd/subscriptions/04445c61-01f9-437d-9f74-9b136a5db29f
 
       - name: Terraform Plan management groups
         env:
@@ -87,7 +216,7 @@ jobs:
           TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
           TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
           TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
-          TF_VAR_backend_key: managementgroups.terraform.tfstate
+          TF_VAR_backend_key: mgmtgrp.terraform.tfstate
         run: |
           cd modules/managementgroups
           terraform plan -out=tfplan
@@ -112,6 +241,16 @@ jobs:
           name: tfplan-artifact
           path: modules/managementgroups/tfplan
 
+      - name: Await Manual Approval before apply
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: Nishikant-Sinha-admin_tescoims
+          minimum-approvals: 1
+          issue-title: "Manual approval required for apply"
+          issue-body: "Please approve to proceed with Terraform apply"
+          exclude-workflow-initiator-as-approver: false
+
       - name: Terraform Apply management groups
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
@@ -120,13 +259,13 @@ jobs:
           TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
           TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
           TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
-          TF_VAR_backend_key: managementgroups.terraform.tfstate
+          TF_VAR_backend_key: mgmtgrp.terraform.tfstate
         run: |
           cd modules/managementgroups
           terraform apply -auto-approve tfplan
 
-  DeployHubSpoke:
-    if: ${{ github.event.inputs.jobToRun == 'DeployHubSpoke' }}
+  ConnRGs:
+    if: ${{ github.event.inputs.jobToRun == 'ConnRGs' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -150,16 +289,16 @@ jobs:
           TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
           TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
           TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
-          TF_VAR_backend_key: hubspoke.terraform.tfstate
+          TF_VAR_backend_key: connrg.terraform.tfstate
         run: |
-          cd modules/hubandspoke
+          cd modules/conn-sub/conn-sub-rg
           terraform init \
             -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
             -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
             -backend-config="container_name=${TF_VAR_backend_container_name}" \
             -backend-config="key=${TF_VAR_backend_key}"
 
-      - name: Terraform Plan Hub & Spoke
+      - name: Terraform Import
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
@@ -167,9 +306,23 @@ jobs:
           TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
           TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
           TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
-          TF_VAR_backend_key: hubspoke.terraform.tfstate
+          TF_VAR_backend_key: connrg.terraform.tfstate
         run: |
-          cd modules/hubandspoke
+          cd modules/conn-sub/conn-sub-rg
+          # Import Resource Groups in Connectivity
+          terraform import azurerm_resource_group.ims-prd-conn-ne-rg-network /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network
+      
+      - name: Terraform Plan Connectivity RGs
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: connrg.terraform.tfstate
+        run: |
+          cd modules/conn-sub/conn-sub-rg
           terraform plan -out=tfplan
           terraform show -no-color tfplan > plan.txt  
 
@@ -177,22 +330,32 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: terraform-workspace
-          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/modules/hubandspoke/.terraform.lock.hcl
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/modules/conn-sub/conn-sub-rg/.terraform.lock.hcl
           include-hidden-files: true
 
       - name: Upload plan.txt artifact
         uses: actions/upload-artifact@v4
         with:
           name: plan-txt-artifact
-          path: modules/hubandspoke/plan.txt
+          path: modules/conn-sub/conn-sub-rg/plan.txt
 
       - name: Upload tfplan artifact
         uses: actions/upload-artifact@v4
         with:
           name: tfplan-artifact
-          path: modules/hubandspoke/tfplan
+          path: modules/conn-sub/conn-sub-rg/tfplan
 
-      - name: Terraform Apply management groups
+      - name: Await Manual Approval before apply
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: Nishikant-Sinha-admin_tescoims
+          minimum-approvals: 1
+          issue-title: "Manual approval required for apply"
+          issue-body: "Please approve to proceed with Terraform apply"
+          exclude-workflow-initiator-as-approver: false  
+
+      - name: Terraform Apply Connectivity RGs
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
@@ -200,13 +363,253 @@ jobs:
           TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
           TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
           TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
-          TF_VAR_backend_key: hubspoke.terraform.tfstate
+          TF_VAR_backend_key: connrg.terraform.tfstate
         run: |
-          cd modules/hubandspoke
+          cd modules/conn-sub/conn-sub-rg
+          terraform apply -auto-approve tfplan
+
+  ConnvNet:
+    if: ${{ github.event.inputs.jobToRun == 'ConnvNet' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: connvNet.terraform.tfstate
+        run: |
+          cd modules/conn-sub/conn-sub-vnet
+          terraform init \
+            -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
+            -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
+            -backend-config="container_name=${TF_VAR_backend_container_name}" \
+            -backend-config="key=${TF_VAR_backend_key}"
+
+      - name: Terraform Import
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: connvNet.terraform.tfstate
+        run: |
+          cd modules/conn-sub/conn-sub-vnet
+          # Import vNets in Connectivity
+          terraform import azurerm_virtual_network.ims-prd-conn-ne-vnet-hub-01 /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-conn-ne-vnet-hub-01
+          
+          # Import Subnets
+          terraform import azurerm_subnet.AzureFirewallManagementSubnet /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-conn-ne-vnet-hub-01/subnets/AzureFirewallManagementSubnet
+
+          terraform import azurerm_subnet.GatewaySubnet /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-conn-ne-vnet-hub-01/subnets/GatewaySubnet
+
+          terraform import azurerm_subnet.AzureFirewallSubnet /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-conn-ne-vnet-hub-01/subnets/AzureFirewallSubnet
+
+          terraform import azurerm_subnet.ims-prd-conn-ne-snet-pep /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-conn-ne-vnet-hub-01/subnets/ims-prd-conn-ne-snet-pep
+
+          terraform import azurerm_subnet.ims-prd-conn-ne-snet-dnsprin /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-conn-ne-vnet-hub-01/subnets/ims-prd-conn-ne-snet-dnsprin
+
+          terraform import azurerm_subnet.ims-prd-conn-ne-snet-dnsprout /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-conn-ne-vnet-hub-01/subnets/ims-prd-conn-ne-snet-dnsprout
+      
+      - name: Terraform Plan Connectivity vNets
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: connvNet.terraform.tfstate
+        run: |
+          cd modules/conn-sub/conn-sub-vnet
+          terraform plan -out=tfplan
+          terraform show -no-color tfplan > plan.txt  
+
+      - name: Upload .terraform.lock.hcl
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-workspace
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/modules/conn-sub/conn-sub-vnet/.terraform.lock.hcl
+          include-hidden-files: true
+
+      - name: Upload plan.txt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-txt-artifact
+          path: modules/conn-sub/conn-sub-vnet/plan.txt
+
+      - name: Upload tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: modules/conn-sub/conn-sub-vnet/tfplan
+
+      - name: Await Manual Approval before apply
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: Nishikant-Sinha-admin_tescoims
+          minimum-approvals: 1
+          issue-title: "Manual approval required for apply"
+          issue-body: "Please approve to proceed with Terraform apply"
+          exclude-workflow-initiator-as-approver: false  
+
+      - name: Terraform Apply Connectivity vNets
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: connvNet.terraform.tfstate
+        run: |
+          cd modules/conn-sub/conn-sub-vnet
+          terraform apply -auto-approve tfplan
+
+  ConnFirewall:
+    if: ${{ github.event.inputs.jobToRun == 'ConnFirewall' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: connfw.terraform.tfstate
+        run: |
+          cd modules/conn-sub/conn-sub-fw
+          terraform init \
+            -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
+            -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
+            -backend-config="container_name=${TF_VAR_backend_container_name}" \
+            -backend-config="key=${TF_VAR_backend_key}"
+
+      - name: Terraform Import
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: connfw.terraform.tfstate
+        run: |
+          cd modules/conn-sub/conn-sub-fw
+          # Import Firewall Public IP
+          terraform import azurerm_public_ip.pipafw01 /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/publicIPAddresses/ims-prd-conn-ne-pip-afw-01
+      
+          # Import Firewall
+          terraform import azurerm_firewall.fw /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/azureFirewalls/ims-prd-conn-ne-afw-01
+
+          # Import Firewall Policy
+          terraform import azurerm_firewall_policy.fw_policy /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/firewallPolicies/ims-prd-conn-ne-afwp-01
+
+          # Import Firewall Policy Rule Collection Group. The blocks inside (network_rule_collection, application_rule_collection, etc.) are part of the group resource and not separately addressable/importable.
+
+          terraform import azurerm_firewall_policy_rule_collection_group.coreplat_group /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/firewallPolicies/ims-prd-conn-ne-afwp-01/ruleCollectionGroups/ims-prd-conn-ne-afwprcg-coreplat
+      
+          # Import IP Groups
+          terraform import azurerm_ip_group.ims-prd-conn-ne-ZscallerIPg-L3 "/subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/ipGroups/ims-prd-conn-ne-ZscallerIPg-L3"
+          
+          terraform import azurerm_ip_group.ims-prd-conn-ne-ZscallerIPg-L5 "/subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/ipGroups/ims-prd-conn-ne-ZscallerIPg-L5"
+          
+          terraform import azurerm_ip_group.ims-prd-conn-ne-ZscallerIPg-M1 "/subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/ipGroups/ims-prd-conn-ne-ZscallerIPg-M1"
+          
+          terraform import azurerm_ip_group.ims-prd-conn-ne-ZscallerIPg-M2 "/subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/ipGroups/ims-prd-conn-ne-ZscallerIPg-M2"
+
+      - name: Terraform Plan Azure Firewall
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: connfw.terraform.tfstate
+        run: |
+          cd modules/conn-sub/conn-sub-fw
+          terraform plan -out=tfplan
+          terraform show -no-color tfplan > plan.txt  
+
+      - name: Upload .terraform.lock.hcl
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-workspace
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/modules/conn-sub/conn-sub-fw/.terraform.lock.hcl
+          include-hidden-files: true
+
+      - name: Upload plan.txt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-txt-artifact
+          path: modules/conn-sub/conn-sub-fw/plan.txt
+
+      - name: Upload tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: modules/conn-sub/conn-sub-fw/tfplan
+
+      - name: Await Manual Approval before apply
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: Nishikant-Sinha-admin_tescoims
+          minimum-approvals: 1
+          issue-title: "Manual approval required for apply"
+          issue-body: "Please approve to proceed with Terraform apply"
+          exclude-workflow-initiator-as-approver: false  
+
+      - name: Terraform Apply Azure Firewall
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: connfw.terraform.tfstate
+        run: |
+          cd modules/conn-sub/conn-sub-fw
           terraform apply -auto-approve tfplan
     
-  DeployNetworking:
-    if: ${{ github.event.inputs.jobToRun == 'DeployNetworking' }}
+  ConnVPG:
+    if: ${{ github.event.inputs.jobToRun == 'ConnVPG' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -230,16 +633,16 @@ jobs:
           TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
           TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
           TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
-          TF_VAR_backend_key: networking.terraform.tfstate
+          TF_VAR_backend_key: connvpg.terraform.tfstate
         run: |
-          cd modules/networking
+          cd modules/conn-sub/conn-sub-vpg
           terraform init \
             -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
             -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
             -backend-config="container_name=${TF_VAR_backend_container_name}" \
             -backend-config="key=${TF_VAR_backend_key}"
 
-      - name: Terraform Plan networking
+      - name: Terraform Import
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
@@ -247,9 +650,39 @@ jobs:
           TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
           TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
           TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
-          TF_VAR_backend_key: networking.terraform.tfstate
+          TF_VAR_backend_key: connvpg.terraform.tfstate
         run: |
-          cd modules/networking
+          cd modules/conn-sub/conn-sub-vpg
+          # Import VPG Public IPs
+          terraform import azurerm_public_ip.pipvpng01 /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/publicIPAddresses/ims-prd-conn-ne-pip-vpng-01
+          terraform import azurerm_public_ip.pipvpng02 /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/publicIPAddresses/ims-prd-conn-ne-pip-vpng-02
+      
+          # Import VPG
+          terraform import azurerm_virtual_network_gateway.example /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/virtualNetworkGateways/ims-prd-conn-ne-vpng-01
+      
+          # Import Local Network Gateways
+          terraform import azurerm_local_network_gateway.aws_lgw1 /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/localNetworkGateways/ims-prd-conn-ne-lgw-aws-01
+          terraform import azurerm_local_network_gateway.aws_lgw2 /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/localNetworkGateways/ims-prd-conn-ne-lgw-aws-02
+          terraform import azurerm_local_network_gateway.aws_lgw3 /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/localNetworkGateways/ims-prd-conn-ne-lgw-aws-03
+          terraform import azurerm_local_network_gateway.aws_lgw4 /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/localNetworkGateways/ims-prd-conn-ne-lgw-aws-04
+      
+          # Import Gateway Connections
+          terraform import azurerm_virtual_network_gateway_connection.s2s_connection1 /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/connections/ims-prd-conn-ne-vnc-01
+          terraform import azurerm_virtual_network_gateway_connection.s2s_connection2 /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/connections/ims-prd-conn-ne-vnc-02
+          terraform import azurerm_virtual_network_gateway_connection.s2s_connection3 /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/connections/ims-prd-conn-ne-vnc-03
+          terraform import azurerm_virtual_network_gateway_connection.s2s_connection4 /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/connections/ims-prd-conn-ne-vnc-04
+      
+      - name: Terraform Plan Virtual Private Gateway
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: connvpg.terraform.tfstate
+        run: |
+          cd modules/conn-sub/conn-sub-vpg
           terraform plan -out=tfplan
           terraform show -no-color tfplan > plan.txt  
 
@@ -257,22 +690,32 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: terraform-workspace
-          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/modules/networking/.terraform.lock.hcl
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/modules/conn-sub/conn-sub-vpg/.terraform.lock.hcl
           include-hidden-files: true
 
       - name: Upload plan.txt artifact
         uses: actions/upload-artifact@v4
         with:
           name: plan-txt-artifact
-          path: modules/networking/plan.txt
+          path: modules/conn-sub/conn-sub-vpg/plan.txt
 
       - name: Upload tfplan artifact
         uses: actions/upload-artifact@v4
         with:
           name: tfplan-artifact
-          path: modules/networking/tfplan
+          path: modules/conn-sub/conn-sub-vpg/tfplan
 
-      - name: Terraform Apply Networking
+      - name: Await Manual Approval before apply
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: Nishikant-Sinha-admin_tescoims
+          minimum-approvals: 1
+          issue-title: "Manual approval required for apply"
+          issue-body: "Please approve to proceed with Terraform apply"
+          exclude-workflow-initiator-as-approver: false  
+
+      - name: Terraform Apply Virtual Private Gateway
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
@@ -280,13 +723,13 @@ jobs:
           TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
           TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
           TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
-          TF_VAR_backend_key: networking.terraform.tfstate
+          TF_VAR_backend_key: connvpg.terraform.tfstate
         run: |
-          cd modules/networking
+          cd modules/conn-sub/conn-sub-vpg
           terraform apply -auto-approve tfplan
 
-  DeployServices:
-    if: ${{ github.event.inputs.jobToRun == 'DeployServices' }}
+  ConnDNSPR:
+    if: ${{ github.event.inputs.jobToRun == 'ConnDNSPR' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -310,16 +753,16 @@ jobs:
           TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
           TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
           TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
-          TF_VAR_backend_key: azservices.terraform.tfstate
+          TF_VAR_backend_key: conndnspr.terraform.tfstate
         run: |
-          cd modules/azureservices
+          cd modules/conn-sub/conn-sub-dnspr
           terraform init \
             -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
             -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
             -backend-config="container_name=${TF_VAR_backend_container_name}" \
             -backend-config="key=${TF_VAR_backend_key}"
 
-      - name: Terraform Plan Azure Services
+      - name: Terraform Import
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
@@ -327,9 +770,35 @@ jobs:
           TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
           TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
           TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
-          TF_VAR_backend_key: azservices.terraform.tfstate
+          TF_VAR_backend_key: conndnspr.terraform.tfstate
         run: |
-          cd modules/azureservices
+          cd modules/conn-sub/conn-sub-dnspr
+          # Import Private DNS Resolver
+          terraform import azurerm_private_dns_resolver.dnspr /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/privateDnsResolvers/ims-prd-conn-ne-dnspr-01
+
+          # Import Inbound Endpoint
+          terraform import azurerm_private_dns_resolver_inbound_endpoint.inboundep /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/privateDnsResolvers/ims-prd-conn-ne-dnspr-01/inboundEndpoints/ims-prd-conn-ne-in-dnspr
+
+          # Import Outbound Endpoint
+          terraform import azurerm_private_dns_resolver_outbound_endpoint.outboundep /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/privateDnsResolvers/ims-prd-conn-ne-dnspr-01/outboundEndpoints/ims-prd-conn-ne-out-dnspr
+
+          # Import DNS Forwarding Ruleset
+          terraform import azurerm_private_dns_resolver_dns_forwarding_ruleset.dnsfrs /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/privateDnsResolvers/ims-prd-conn-ne-dnspr-01/dnsForwardingRulesets/ims-prd-conn-ne-dnsfrs-01
+
+          # Import Forwarding Rule  
+          terraform import azurerm_private_dns_resolver_forwarding_rule.dnsfr /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/privateDnsResolvers/ims-prd-conn-ne-dnspr-01/dnsForwardingRulesets/ims-prd-conn-ne-dnsfrs-01/forwardingRules/ims-prd-conn-ne-dnsfrs-rule-01
+      
+      - name: Terraform Plan Private DNS Resolver
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: conndnspr.terraform.tfstate
+        run: |
+          cd modules/conn-sub/conn-sub-dnspr
           terraform plan -out=tfplan
           terraform show -no-color tfplan > plan.txt  
 
@@ -337,22 +806,32 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: terraform-workspace
-          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/modules/azureservices/.terraform.lock.hcl
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/modules/conn-sub/conn-sub-dnspr/.terraform.lock.hcl
           include-hidden-files: true
 
       - name: Upload plan.txt artifact
         uses: actions/upload-artifact@v4
         with:
           name: plan-txt-artifact
-          path: modules/azureservices/plan.txt
+          path: modules/conn-sub/conn-sub-dnspr/plan.txt
 
       - name: Upload tfplan artifact
         uses: actions/upload-artifact@v4
         with:
           name: tfplan-artifact
-          path: modules/azureservices/tfplan
+          path: modules/conn-sub/conn-sub-dnspr/tfplan
 
-      - name: Terraform Apply Azure Services
+      - name: Await Manual Approval before apply
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: Nishikant-Sinha-admin_tescoims
+          minimum-approvals: 1
+          issue-title: "Manual approval required for apply"
+          issue-body: "Please approve to proceed with Terraform apply"
+          exclude-workflow-initiator-as-approver: false  
+
+      - name: Terraform Apply Azure Private DNS Resolver
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
@@ -360,13 +839,13 @@ jobs:
           TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
           TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
           TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
-          TF_VAR_backend_key: azservices.terraform.tfstate
+          TF_VAR_backend_key: conndnspr.terraform.tfstate
         run: |
-          cd modules/azureservices
+          cd modules/conn-sub/conn-sub-dnspr
           terraform apply -auto-approve tfplan
 
-  DeployRules:
-    if: ${{ github.event.inputs.jobToRun == 'DeployRules' }}
+  ConnNetwork:
+    if: ${{ github.event.inputs.jobToRun == 'ConnNetwork' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -390,16 +869,16 @@ jobs:
           TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
           TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
           TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
-          TF_VAR_backend_key: netrules.terraform.tfstate
+          TF_VAR_backend_key: connnw.terraform.tfstate
         run: |
-          cd modules/networkrules
+          cd modules/conn-sub/conn-sub-nw
           terraform init \
             -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
             -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
             -backend-config="container_name=${TF_VAR_backend_container_name}" \
             -backend-config="key=${TF_VAR_backend_key}"
 
-      - name: Terraform Plan Network Rules
+      - name: Terraform Import
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
@@ -407,9 +886,105 @@ jobs:
           TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
           TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
           TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
-          TF_VAR_backend_key: netrules.terraform.tfstate
+          TF_VAR_backend_key: connnw.terraform.tfstate
         run: |
-          cd modules/networkrules
+          cd modules/conn-sub/conn-sub-nw
+          # Import Network Security Group on Hub vNet
+          # ims-prd-conn-ne-nsg-dnsprin
+          terraform import azurerm_network_security_group.ims-prd-conn-ne-nsg-dnsprin /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-dnsprin
+
+          # Import Network Security Group Rules
+          terraform import azurerm_network_security_rule.hub-AllowDNS-TCP-Inbound /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-dnsprin/securityRules/hub-AllowDNS-TCP-Inbound
+          terraform import azurerm_network_security_rule.hub-AllowDNS-UDP-Inbound /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-dnsprin/securityRules/hub-AllowDNS-UDP-Inbound
+          terraform import azurerm_network_security_rule.hub-DenyAnyToAnyInbound /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-dnsprin/securityRules/hub-DenyAnyToAnyInbound
+          terraform import azurerm_network_security_rule.hub-AllowDNS-TCP-Outbound /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-dnsprin/securityRules/hub-AllowDNS-TCP-Outbound
+          terraform import azurerm_network_security_rule.hub-AllowDNS-UDP-Outbound /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-dnsprin/securityRules/hub-AllowDNS-UDP-Outbound
+          terraform import azurerm_network_security_rule.hub-DenyAnyToAnyOutbound /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-dnsprin/securityRules/hub-DenyAnyToAnyOutbound
+
+          # Import Network Security Group on Hub vNet
+          # ims-prd-conn-ne-nsg-dnsprout
+          terraform import azurerm_network_security_group.ims-prd-conn-ne-nsg-dnsprout /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-dnsprout
+
+          # Import Network Security Group Rules
+          terraform import azurerm_network_security_rule.hub-AllowDNS-TCP-Inbound /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-dnsprout/securityRules/hub-AllowDNS-TCP-Inbound
+          terraform import azurerm_network_security_rule.hub-AllowDNS-UDP-Inbound /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-dnsprout/securityRules/hub-AllowDNS-UDP-Inbound
+          terraform import azurerm_network_security_rule.hub-DenyAnyToAnyInbound /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-dnsprout/securityRules/hub-DenyAnyToAnyInbound
+          terraform import azurerm_network_security_rule.hub-AllowDNS-TCP-Outbound /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-dnsprout/securityRules/hub-AllowDNS-TCP-Outbound
+          terraform import azurerm_network_security_rule.hub-AllowDNS-UDP-Outbound /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-dnsprout/securityRules/hub-AllowDNS-UDP-Outbound
+          terraform import azurerm_network_security_rule.hub-DenyAnyToAnyOutbound /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-dnsprout/securityRules/hub-DenyAnyToAnyOutbound
+
+          # Import Network Security Group on Hub vNet
+          # ims-prd-conn-ne-nsg-pep
+          terraform import azurerm_network_security_group.ims-prd-conn-ne-nsg-pep /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-pep
+
+          # Import Network Security Group Rules
+          terraform import azurerm_network_security_rule.hub-DenyAnyToAnyInbound /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-pep/securityRules/hub-DenyAnyToAnyInbound
+          terraform import azurerm_network_security_rule.hub-DenyAnyToAnyOutbound /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-pep/securityRules/hub-DenyAnyToAnyOutbound
+          terraform import azurerm_network_security_rule.hub-AllowDNS-TCP-Outbound /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-pep/securityRules/hub-AllowDNS-TCP-Outbound
+          terraform import azurerm_network_security_rule.hub-AllowDNS-UDP-Outbound /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-pep/securityRules/hub-AllowDNS-UDP-Outbound
+
+          # Import Route Table for GatewaySubnet
+          terraform import azurerm_route_table.ims-prd-conn-ne-rt-vpng /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-vpng
+
+          # Import Route Rule
+          terraform import azurerm_route.ims-prd-conn-ne-udr-vnet-adv /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-vpng/routes/ims-prd-conn-ne-udr-vnet-adv
+          terraform import azurerm_route.ims-prd-conn-ne-udr-vnet-mgmt /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-vpng/routes/ims-prd-conn-ne-udr-vnet-mgmt
+          terraform import azurerm_route.ims-prd-conn-ne-udr-snet-dnsprin /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-vpng/routes/ims-prd-conn-ne-udr-snet-dnsprin
+          terraform import azurerm_route.ims-prd-conn-ne-udr-snet-dnsprout /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-vpng/routes/ims-prd-conn-ne-udr-snet-dnsprout
+          terraform import azurerm_route.ims-prd-conn-ne-udr-snet-hubpep /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-vpng/routes/ims-prd-conn-ne-udr-snet-hubpep
+
+          # Import Route Table for ims-prd-conn-ne-snet-dnsprin Subnet
+          terraform import azurerm_route_table.ims-prd-conn-ne-rt-dnsprin /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-dnsprin
+
+          # Import Route Rule
+          terraform import azurerm_route.default-route /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-dnsprin/routes/default-route
+          terraform import azurerm_route.ims-prd-conn-ne-udr-vnet-aws /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-dnsprin/routes/ims-prd-conn-ne-udr-vnet-aws
+          terraform import azurerm_route.ims-prd-conn-ne-udr-vnet-avd /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-dnsprin/routes/ims-prd-conn-ne-udr-vnet-avd
+          terraform import azurerm_route.ims-prd-conn-ne-udr-vnet-mgmt /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-dnsprin/routes/ims-prd-conn-ne-udr-vnet-mgmt
+
+          # Import Route Table for ims-prd-conn-ne-snet-dnsprout Subnet
+          terraform import azurerm_route_table.ims-prd-conn-ne-rt-dnsprout /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-dnsprout
+
+          # Import Route Rule
+          terraform import azurerm_route.default-route /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-dnsprout/routes/default-route
+          terraform import azurerm_route.ims-prd-conn-ne-udr-vnet-aws /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-dnsprout/routes/ims-prd-conn-ne-udr-vnet-aws
+          terraform import azurerm_route.ims-prd-conn-ne-udr-vnet-avd /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-dnsprout/routes/ims-prd-conn-ne-udr-vnet-avd
+          terraform import azurerm_route.ims-prd-conn-ne-udr-vnet-mgmt /subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-dnsprout/routes/ims-prd-conn-ne-udr-vnet-mgmt
+
+          # Associate NSG and UDR on hub vNet
+          # GatewaySubnet
+          # Import Subnet Route Table Association
+          terraform import azurerm_subnet_route_table_association.example "/subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-conn-ne-vnet-hub-01/subnets/GatewaySubnet/routeTable/subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-vpng
+
+          # ims-prd-conn-ne-snet-dnsprin
+          # Import Subnet NSG Association
+          terraform import azurerm_subnet_network_security_group_association.example "/subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-conn-ne-vnet-hub-01/subnets/ims-prd-conn-ne-snet-dnsprin/networkSecurityGroup/subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-dnsprin
+
+          # Import Subnet Route Table Association
+          terraform import azurerm_subnet_route_table_association.example "/subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-conn-ne-vnet-hub-01/subnets/ims-prd-conn-ne-snet-dnsprin/routeTable/subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-dnsprin
+
+          # ims-prd-conn-ne-snet-dnsprout
+          # Import Subnet NSG Association
+          terraform import azurerm_subnet_network_security_group_association.example "/subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-conn-ne-vnet-hub-01/subnets/ims-prd-conn-ne-snet-dnsprout/networkSecurityGroup/subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-dnsprout
+
+          # Import Subnet Route Table Association
+          terraform import azurerm_subnet_route_table_association.example "/subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-conn-ne-vnet-hub-01/subnets/ims-prd-conn-ne-nsg-dnsprout/routeTable/subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-conn-ne-rt-dnsprout
+
+          # ims-prd-conn-ne-snet-pep
+          # Import Subnet NSG Association
+          terraform import azurerm_subnet_network_security_group_association.example "/subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-conn-ne-vnet-hub-01/subnets/ims-prd-conn-ne-snet-pep/networkSecurityGroup/subscriptions/eddf9358-5701-43de-b597-5f3f151be5a7/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-conn-ne-nsg-pep
+
+      - name: Terraform Plan Connectivity Networking
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: connnw.terraform.tfstate
+        run: |
+          cd modules/conn-sub/conn-sub-nw
           terraform plan -out=tfplan
           terraform show -no-color tfplan > plan.txt  
 
@@ -417,22 +992,32 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: terraform-workspace
-          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/modules/networkrules/.terraform.lock.hcl
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/modules/conn-sub/conn-sub-nw/.terraform.lock.hcl
           include-hidden-files: true
 
       - name: Upload plan.txt artifact
         uses: actions/upload-artifact@v4
         with:
           name: plan-txt-artifact
-          path: modules/networkrules/plan.txt
+          path: modules/conn-sub/conn-sub-nw/plan.txt
 
       - name: Upload tfplan artifact
         uses: actions/upload-artifact@v4
         with:
           name: tfplan-artifact
-          path: modules/networkrules/tfplan
+          path: modules/conn-sub/conn-sub-nw/tfplan
 
-      - name: Terraform Apply Network Rules
+      - name: Await Manual Approval before apply
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: Nishikant-Sinha-admin_tescoims
+          minimum-approvals: 1
+          issue-title: "Manual approval required for apply"
+          issue-body: "Please approve to proceed with Terraform apply"
+          exclude-workflow-initiator-as-approver: false  
+
+      - name: Terraform Apply Connectivity Networking
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
@@ -440,11 +1025,953 @@ jobs:
           TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
           TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
           TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
-          TF_VAR_backend_key: netrules.terraform.tfstate
+          TF_VAR_backend_key: connnw.terraform.tfstate
         run: |
-          cd modules/networkrules
+          cd modules/conn-sub/conn-sub-nw
+          terraform apply -auto-approve tfplan
+
+  MgmtRGs:
+    if: ${{ github.event.inputs.jobToRun == 'MgmtRGs' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: mgmtrg.terraform.tfstate
+        run: |
+          cd modules/mgmt-sub/mgmt-sub-rg
+          terraform init \
+            -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
+            -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
+            -backend-config="container_name=${TF_VAR_backend_container_name}" \
+            -backend-config="key=${TF_VAR_backend_key}"
+
+      - name: Terraform Import
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: mgmtrg.terraform.tfstate
+        run: |
+          cd modules/mgmt-sub/mgmt-sub-rg
+          # Import Management Resource groups
+
+          terraform import azurerm_resource_group.ims-prd-mgmt-ne-rg-network /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network
+
+          terraform import azurerm_resource_group.ims-prd-mgmt-ne-rg-defender /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-defender
+
+          terraform import azurerm_resource_group.ims-prd-mgmt-ne-rg-keyvault /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-keyvault
+
+          terraform import azurerm_resource_group.ims-prd-mgmt-ne-rg-log-security /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-log-security
+
+          terraform import azurerm_resource_group.ims-prd-mgmt-ne-rg-log-system /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-log-system
+
+          terraform import azurerm_resource_group.ims-prd-mgmt-ne-rg-purview /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-purview
+
+          terraform import azurerm_resource_group.ims-prd-mgmt-ne-rg-storage /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-storage
+      
+      - name: Terraform Plan Management RGs
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: mgmtrg.terraform.tfstate
+        run: |
+          cd modules/mgmt-sub/mgmt-sub-rg
+          terraform plan -out=tfplan
+          terraform show -no-color tfplan > plan.txt  
+
+      - name: Upload .terraform.lock.hcl
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-workspace
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/cd modules/mgmt-sub/mgmt-sub-rg/.terraform.lock.hcl
+          include-hidden-files: true
+
+      - name: Upload plan.txt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-txt-artifact
+          path: modules/mgmt-sub/mgmt-sub-rg/plan.txt
+
+      - name: Upload tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: modules/mgmt-sub/mgmt-sub-rg/tfplan
+
+      - name: Await Manual Approval before apply
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: Nishikant-Sinha-admin_tescoims
+          minimum-approvals: 1
+          issue-title: "Manual approval required for apply"
+          issue-body: "Please approve to proceed with Terraform apply"
+          exclude-workflow-initiator-as-approver: false  
+
+      - name: Terraform Apply Management RGs
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: mgmtrg.terraform.tfstate
+        run: |
+          cd modules/mgmt-sub/mgmt-sub-rg
           terraform apply -auto-approve tfplan
   
+  MgmtvNet:
+    if: ${{ github.event.inputs.jobToRun == 'MgmtvNet' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: mgmtvNet.terraform.tfstate
+        run: |
+          cd modules/mgmt-sub/mgmt-sub-vnet
+          terraform init \
+            -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
+            -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
+            -backend-config="container_name=${TF_VAR_backend_container_name}" \
+            -backend-config="key=${TF_VAR_backend_key}"
+
+      - name: Terraform Import
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: mgmtvNet.terraform.tfstate
+        run: |
+          cd modules/mgmt-sub/mgmt-sub-vnet
+          # Import Management vNet
+          terraform import azurerm_virtual_network.ims-prd-mgmt-ne-vnet-01 /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-mgmt-ne-vnet-01
+
+          # Import prd-management Subnets
+          terraform import azurerm_subnet.ims-prd-mgmt-ne-snet-security /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-mgmt-ne-vnet-01/subnets/ims-prd-mgmt-ne-snet-security
+
+          terraform import azurerm_subnet.ims-prd-mgmt-ne-snet-keyvault /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-mgmt-ne-vnet-01/subnets/ims-prd-mgmt-ne-snet-keyvault
+
+          terraform import azurerm_subnet.ims-prd-mgmt-ne-snet-pep /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-mgmt-ne-vnet-01/subnets/ims-prd-mgmt-ne-snet-pep
+
+          terraform import azurerm_subnet.ims-prd-mgmt-ne-snet-system /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-mgmt-ne-vnet-01/subnets/ims-prd-mgmt-ne-snet-system
+      
+      - name: Terraform Plan Management vNets
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: mgmtvNet.terraform.tfstate
+        run: |
+          cd modules/mgmt-sub/mgmt-sub-vnet
+          terraform plan -out=tfplan
+          terraform show -no-color tfplan > plan.txt  
+
+      - name: Upload .terraform.lock.hcl
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-workspace
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/cd modules/mgmt-sub/mgmt-sub-vnet/.terraform.lock.hcl
+          include-hidden-files: true
+
+      - name: Upload plan.txt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-txt-artifact
+          path: modules/mgmt-sub/mgmt-sub-vnet/plan.txt
+
+      - name: Upload tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: modules/mgmt-sub/mgmt-sub-vnet/tfplan
+
+      - name: Await Manual Approval before apply
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: Nishikant-Sinha-admin_tescoims
+          minimum-approvals: 1
+          issue-title: "Manual approval required for apply"
+          issue-body: "Please approve to proceed with Terraform apply"
+          exclude-workflow-initiator-as-approver: false  
+
+      - name: Terraform Apply Management vNets
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: mgmtvNet.terraform.tfstate
+        run: |
+          cd modules/mgmt-sub/mgmt-sub-vnet
+          terraform apply -auto-approve tfplan
+
+  MgmtKV&LogAnalytics:
+    if: ${{ github.event.inputs.jobToRun == 'MgmtKV&LogAnalytics' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: mgmtkv.terraform.tfstate
+        run: |
+          cd modules/mgmt-sub/mgmt-sub-kv
+          terraform init \
+            -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
+            -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
+            -backend-config="container_name=${TF_VAR_backend_container_name}" \
+            -backend-config="key=${TF_VAR_backend_key}"
+
+      - name: Terraform Import
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: mgmtkv.terraform.tfstate
+        run: |
+          cd modules/mgmt-sub/mgmt-sub-kv
+          # Import Key Vault
+          terraform import azurerm_key_vault.kv /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-keyvault/providers/Microsoft.KeyVault/vaults/ims-prd-mgmt-ne-kv-01
+
+          # Import Private Endpoint
+          terraform import azurerm_private_endpoint.kvpep /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-keyvault/providers/Microsoft.Network/privateEndpoints/ims-prd-mgmt-ne-pep-kv-01
+          
+          # Import Private DNS Zone
+          terraform import azurerm_private_dns_zone.dnszone /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net
+      
+          # Import Private DNS Zone Virtual Network Link
+          terraform import azurerm_private_dns_zone_virtual_network_link.dnslink /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net/virtualNetworkLinks/kv-dnslink
+      
+          # Import Private DNS A Record
+          terraform import azurerm_private_dns_a_record.ims-prd-mgmt-ne-kv-01 /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/privateDnsZones/privatelink.vaultcore.azure.net/A/ims-prd-mgmt-ne-kv-01
+
+          # Import Log Analytics Workspace into Terraform
+          terraform import azurerm_log_analytics_workspace.log_analytics /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.OperationalInsights/workspaces/ims-prd-mgmt-ne-log-analytics-01
+
+      - name: Terraform Plan Key Vault & LogAnalytics
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: mgmtkv.terraform.tfstate
+        run: |
+          cd modules/mgmt-sub/mgmt-sub-kv
+          terraform plan -out=tfplan
+          terraform show -no-color tfplan > plan.txt  
+
+      - name: Upload .terraform.lock.hcl
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-workspace
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/cd modules/mgmt-sub/mgmt-sub-kv/.terraform.lock.hcl
+          include-hidden-files: true
+
+      - name: Upload plan.txt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-txt-artifact
+          path: modules/mgmt-sub/mgmt-sub-kv/plan.txt
+
+      - name: Upload tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: modules/mgmt-sub/mgmt-sub-kv/tfplan
+
+      - name: Await Manual Approval before apply
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: Nishikant-Sinha-admin_tescoims
+          minimum-approvals: 1
+          issue-title: "Manual approval required for apply"
+          issue-body: "Please approve to proceed with Terraform apply"
+          exclude-workflow-initiator-as-approver: false  
+
+      - name: Terraform Apply Key Vault & LogAnalytics
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: mgmtkv.terraform.tfstate
+        run: |
+          cd modules/mgmt-sub/mgmt-sub-kv
+          terraform apply -auto-approve tfplan
+
+  MgmtNetwork:
+    if: ${{ github.event.inputs.jobToRun == 'MgmtNetwork' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: mgmtnw.terraform.tfstate
+        run: |
+          cd modules/mgmt-sub/mgmt-sub-nw
+          terraform init \
+            -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
+            -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
+            -backend-config="container_name=${TF_VAR_backend_container_name}" \
+            -backend-config="key=${TF_VAR_backend_key}"
+
+      - name: Terraform Import
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: mgmtnw.terraform.tfstate
+        run: |
+          cd modules/mgmt-sub/mgmt-sub-nw
+          # Import Network Security Group on Mgmt vNet
+          # ims-prd-mgmt-ne-nsg-security
+          terraform import azurerm_network_security_group.ims-prd-mgmt-ne-nsg-security /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-security
+
+          # Import Network Security Group Rules
+          terraform import azurerm_network_security_rule.mgmt-DenyAnyToAnyInbound /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-security/securityRules/mgmt-DenyAnyToAnyInbound
+          terraform import azurerm_network_security_rule.mgmt-AllowDNS-TCP-Outbound /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-security/securityRules/mgmt-AllowDNS-TCP-Outbound
+          terraform import azurerm_network_security_rule.mgmt-AllowDNS-UDP-Outbound /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-security/securityRules/mgmt-AllowDNS-UDP-Outbound
+          terraform import azurerm_network_security_rule.mgmt-DenyAnyToAnyOutbound /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-security/securityRules/mgmt-DenyAnyToAnyOutbound
+      
+          # ims-prd-mgmt-ne-nsg-system
+          terraform import azurerm_network_security_group.ims-prd-mgmt-ne-nsg-system /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-system
+
+          # Import Network Security Group Rules
+          terraform import azurerm_network_security_rule.mgmt-DenyAnyToAnyInbound /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-system/securityRules/mgmt-DenyAnyToAnyInbound
+          terraform import azurerm_network_security_rule.mgmt-AllowDNS-TCP-Outbound /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-system/securityRules/mgmt-AllowDNS-TCP-Outbound
+          terraform import azurerm_network_security_rule.mgmt-AllowDNS-UDP-Outbound /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-system/securityRules/mgmt-AllowDNS-UDP-Outbound
+          terraform import azurerm_network_security_rule.mgmt-DenyAnyToAnyOutbound /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-system/securityRules/mgmt-DenyAnyToAnyOutbound
+
+          # ims-prd-mgmt-ne-nsg-keyvault
+          terraform import azurerm_network_security_group.ims-prd-mgmt-ne-nsg-keyvault /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-keyvault
+
+          # Import Network Security Group Rules
+          terraform import azurerm_network_security_rule.mgmt-DenyAnyToAnyInbound /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-keyvault/securityRules/mgmt-DenyAnyToAnyInbound
+          terraform import azurerm_network_security_rule.mgmt-AllowDNS-TCP-Outbound /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-keyvault/securityRules/mgmt-AllowDNS-TCP-Outbound
+          terraform import azurerm_network_security_rule.mgmt-AllowDNS-UDP-Outbound /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-keyvault/securityRules/mgmt-AllowDNS-UDP-Outbound
+          terraform import azurerm_network_security_rule.mgmt-DenyAnyToAnyOutbound /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-keyvault/securityRules/mgmt-DenyAnyToAnyOutbound
+
+          # ims-prd-mgmt-ne-nsg-pep
+          terraform import azurerm_network_security_group.ims-prd-mgmt-ne-nsg-pep /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-pep
+
+          # Import Network Security Group Rules
+          terraform import azurerm_network_security_rule.mgmt-DenyAnyToAnyInbound /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-pep/securityRules/mgmt-DenyAnyToAnyInbound
+          terraform import azurerm_network_security_rule.mgmt-AllowDNS-TCP-Outbound /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-pep/securityRules/mgmt-AllowDNS-TCP-Outbound
+          terraform import azurerm_network_security_rule.mgmt-AllowDNS-UDP-Outbound /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-pep/securityRules/mgmt-AllowDNS-UDP-Outbound
+          terraform import azurerm_network_security_rule.mgmt-DenyAnyToAnyOutbound /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-pep/securityRules/mgmt-DenyAnyToAnyOutbound
+
+          # Import Route Table for ims-prd-mgmt-ne-snet-keyvault Subnet
+          terraform import azurerm_route_table.ims-prd-mgmt-ne-rt-keyvault /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-keyvault
+
+          # Import Route Rule
+          terraform import azurerm_route.default-route /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-keyvault/routes/default-route
+          terraform import azurerm_route.ims-prd-mgmt-ne-udr-vnet-avd /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-keyvault/routes/ims-prd-mgmt-ne-udr-vnet-avd
+          terraform import azurerm_route.ims-prd-mgmt-ne-udr-snet-dnsprin /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-keyvault/routes/ims-prd-mgmt-ne-udr-snet-dnsprin
+          terraform import azurerm_route.ims-prd-mgmt-ne-udr-snet-vpng /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-keyvault/routes/ims-prd-mgmt-ne-udr-snet-vpng
+
+          # Import Route Table for ims-prd-mgmt-ne-snet-security Subnet
+          terraform import azurerm_route_table.ims-prd-mgmt-ne-rt-security /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-security
+
+          # Import Route Rule
+          terraform import azurerm_route.default-route /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-security/routes/default-route
+          terraform import azurerm_route.ims-prd-mgmt-ne-udr-vnet-avd /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-security/routes/ims-prd-mgmt-ne-udr-vnet-avd
+          terraform import azurerm_route.ims-prd-mgmt-ne-udr-snet-dnsprin /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-security/routes/ims-prd-mgmt-ne-udr-snet-dnsprin
+          terraform import azurerm_route.ims-prd-mgmt-ne-udr-snet-vpng /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-security/routes/ims-prd-mgmt-ne-udr-snet-vpng
+
+          # Import Route Table for ims-prd-mgmt-ne-snet-system Subnet
+          terraform import azurerm_route_table.ims-prd-mgmt-ne-rt-system /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-system
+
+          # Import Route Rule
+          terraform import azurerm_route.default-route /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-system/routes/default-route
+          terraform import azurerm_route.ims-prd-mgmt-ne-udr-vnet-avd /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-system/routes/ims-prd-mgmt-ne-udr-vnet-avd
+          terraform import azurerm_route.ims-prd-mgmt-ne-udr-snet-dnsprin /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-system/routes/ims-prd-mgmt-ne-udr-snet-dnsprin
+          terraform import azurerm_route.ims-prd-mgmt-ne-udr-snet-vpng /subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-system/routes/ims-prd-mgmt-ne-udr-snet-vpng
+
+          # Associate NSG and UDR on mgmt vNet
+          # ims-prd-mgmt-ne-snet-security
+          # Import Subnet NSG Association
+          terraform import azurerm_subnet_network_security_group_association.example "/subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-mgmt-ne-vnet-01/subnets/ims-prd-mgmt-ne-snet-security/networkSecurityGroup/subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-security
+
+          # Import Subnet Route Table Association
+          terraform import azurerm_subnet_route_table_association.example "/subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-mgmt-ne-vnet-01/subnets/ims-prd-mgmt-ne-snet-security/routeTable/subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-security
+
+          # ims-prd-mgmt-ne-snet-system
+          # Import Subnet NSG Association
+          terraform import azurerm_subnet_network_security_group_association.example "/subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-mgmt-ne-vnet-01/subnets/ims-prd-mgmt-ne-snet-system/networkSecurityGroup/subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-system
+
+          # Import Subnet Route Table Association
+          terraform import azurerm_subnet_route_table_association.example "/subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-mgmt-ne-vnet-01/subnets/ims-prd-mgmt-ne-snet-system/routeTable/subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-system"
+
+          # ims-prd-mgmt-ne-snet-keyvault
+          # Import Subnet NSG Association
+          terraform import azurerm_subnet_network_security_group_association.example "/subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-mgmt-ne-vnet-01/subnets/ims-prd-mgmt-ne-snet-keyvault/networkSecurityGroup/subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-mgmt-ne-nsg-keyvault
+
+          # Import Subnet Route Table Association
+          terraform import azurerm_subnet_route_table_association.example "/subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-mgmt-ne-vnet-01/subnets/ims-prd-mgmt-ne-snet-keyvault/routeTable/subscriptions/87d1b79f-82bc-4d1e-8c6e-b20bbde0f6d6/resourceGroups/ims-prd-mgmt-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-mgmt-ne-rt-keyvault"
+
+      - name: Terraform Plan Management Networking
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: mgmtnw.terraform.tfstate
+        run: |
+          cd modules/mgmt-sub/mgmt-sub-nw
+          terraform plan -out=tfplan
+          terraform show -no-color tfplan > plan.txt  
+
+      - name: Upload .terraform.lock.hcl
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-workspace
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/cd modules/mgmt-sub/mgmt-sub-nw/.terraform.lock.hcl
+          include-hidden-files: true
+
+      - name: Upload plan.txt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-txt-artifact
+          path: modules/mgmt-sub/mgmt-sub-nw/plan.txt
+
+      - name: Upload tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: modules/mgmt-sub/mgmt-sub-nw/tfplan
+
+      - name: Await Manual Approval before apply
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: Nishikant-Sinha-admin_tescoims
+          minimum-approvals: 1
+          issue-title: "Manual approval required for apply"
+          issue-body: "Please approve to proceed with Terraform apply"
+          exclude-workflow-initiator-as-approver: false  
+
+      - name: Terraform Apply Management Networking
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: mgmtnw.terraform.tfstate
+        run: |
+          cd modules/mgmt-sub/mgmt-sub-nw
+          terraform apply -auto-approve tfplan
+
+  AvdRGs:
+    if: ${{ github.event.inputs.jobToRun == 'AvdRGs' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: avdrg.terraform.tfstate
+        run: |
+          cd modules/avd-sub/avd-sub-rg
+          terraform init \
+            -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
+            -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
+            -backend-config="container_name=${TF_VAR_backend_container_name}" \
+            -backend-config="key=${TF_VAR_backend_key}"
+
+      - name: Terraform Import
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: avdrg.terraform.tfstate
+        run: |
+          cd modules/avd-sub/avd-sub-rg
+          # Import AVD Resource groups
+          terraform import azurerm_resource_group.ims-prd-avd-ne-rg-network /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network
+
+          terraform import azurerm_resource_group.ims-prd-avd-ne-rg-pool /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-pool
+
+          terraform import azurerm_resource_group.ims-prd-avd-ne-rg-psnl /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-psnl
+                  
+      - name: Terraform Plan AVD RGs
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: avdrg.terraform.tfstate
+        run: |
+          cd modules/avd-sub/avd-sub-rg
+          terraform plan -out=tfplan
+          terraform show -no-color tfplan > plan.txt  
+
+      - name: Upload .terraform.lock.hcl
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-workspace
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/cd modules/avd-sub/avd-sub-rg/.terraform.lock.hcl
+          include-hidden-files: true
+
+      - name: Upload plan.txt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-txt-artifact
+          path: modules/avd-sub/avd-sub-rg/plan.txt
+
+      - name: Upload tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: modules/avd-sub/avd-sub-rg/tfplan
+
+      - name: Await Manual Approval before apply
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: Nishikant-Sinha-admin_tescoims
+          minimum-approvals: 1
+          issue-title: "Manual approval required for apply"
+          issue-body: "Please approve to proceed with Terraform apply"
+          exclude-workflow-initiator-as-approver: false  
+
+      - name: Terraform Apply AVD RGs
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: avdrg.terraform.tfstate
+        run: |
+          cd modules/avd-sub/avd-sub-rg
+          terraform apply -auto-approve tfplan
+
+  AvdvNet:
+    if: ${{ github.event.inputs.jobToRun == 'AvdvNet' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: avdvNet.terraform.tfstate
+        run: |
+          cd modules/avd-sub/avd-sub-vnet
+          terraform init \
+            -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
+            -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
+            -backend-config="container_name=${TF_VAR_backend_container_name}" \
+            -backend-config="key=${TF_VAR_backend_key}"
+
+      - name: Terraform Import
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: avdvNet.terraform.tfstate
+        run: |
+          cd modules/avd-sub/avd-sub-vnet
+          # Import AVD vNet
+          terraform import azurerm_virtual_network.ims-prd-avd-ne-vnet-01 /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-avd-ne-vnet-01
+
+          # Import AVD Subnets
+          terraform import azurerm_subnet.ims-prd-avd-ne-snet-pool /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-avd-ne-vnet-01/subnets/ims-prd-avd-ne-snet-pool
+
+          terraform import azurerm_subnet.ims-prd-avd-ne-snet-pep /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-avd-ne-vnet-01/subnets/ims-prd-avd-ne-snet-pep
+
+          terraform import azurerm_subnet.ims-prd-avd-ne-snet-mgmt /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-avd-ne-vnet-01/subnets/ims-prd-avd-ne-snet-mgmt
+
+          terraform import azurerm_subnet.ims-prd-avd-ne-snet-personal /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-avd-ne-vnet-01/subnets/ims-prd-avd-ne-snet-personal
+
+      - name: Terraform Plan AVD vNets
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: avdvNet.terraform.tfstate
+        run: |
+          cd modules/avd-sub/avd-sub-vnet
+          terraform plan -out=tfplan
+          terraform show -no-color tfplan > plan.txt  
+
+      - name: Upload .terraform.lock.hcl
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-workspace
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/cd modules/avd-sub/avd-sub-vnet/.terraform.lock.hcl
+          include-hidden-files: true
+
+      - name: Upload plan.txt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-txt-artifact
+          path: modules/avd-sub/avd-sub-vnet/plan.txt
+
+      - name: Upload tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: modules/avd-sub/avd-sub-vnet/tfplan
+
+      - name: Await Manual Approval before apply
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: Nishikant-Sinha-admin_tescoims
+          minimum-approvals: 1
+          issue-title: "Manual approval required for apply"
+          issue-body: "Please approve to proceed with Terraform apply"
+          exclude-workflow-initiator-as-approver: false  
+
+      - name: Terraform Apply AVD vNets
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: avdvNet.terraform.tfstate
+        run: |
+          cd modules/avd-sub/avd-sub-vnet
+          terraform apply -auto-approve tfplan
+
+  AvdNetwork:
+    if: ${{ github.event.inputs.jobToRun == 'AvdNetwork' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: avdnw.terraform.tfstate
+        run: |
+          cd modules/avd-sub/avd-sub-nw
+          terraform init \
+            -backend-config="resource_group_name=${TF_VAR_backend_resource_group_name}" \
+            -backend-config="storage_account_name=${TF_VAR_backend_storage_account_name}" \
+            -backend-config="container_name=${TF_VAR_backend_container_name}" \
+            -backend-config="key=${TF_VAR_backend_key}"
+
+      - name: Terraform Import
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: avdnw.terraform.tfstate
+        run: |
+          cd modules/avd-sub/avd-sub-nw
+          # avd vNet 
+          # Import Network Security Group on avd vNet
+          # ims-prd-avd-ne-nsg-pool
+          terraform import azurerm_network_security_group.ims-prd-avd-ne-nsg-pool /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-pool
+
+          # Import Network Security Group Rules
+          terraform import azurerm_network_security_rule.avd-DenyAnyToAnyInbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-pool/securityRules/avd-DenyAnyToAnyInbound
+          terraform import azurerm_network_security_rule.avd-AllowDNS-TCP-Outbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-pool/securityRules/avd-AllowDNS-TCP-Outbound
+          terraform import azurerm_network_security_rule.avd-AllowDNS-UDP-Outbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-pool/securityRules/avd-AllowDNS-UDP-Outbound
+          terraform import azurerm_network_security_rule.avd-AllowZscaler-UDP-Outbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-pool/securityRules/avd-AllowZscaler-UDP-Outbound
+          terraform import azurerm_network_security_rule.avd-AllowZscaler-TCP-Outbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-pool/securityRules/avd-AllowZscaler-TCP-Outbound
+          terraform import azurerm_network_security_rule.avd-DenyAnyToAnyOutbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-pool/securityRules/avd-DenyAnyToAnyOutbound
+
+          # ims-prd-avd-ne-nsg-personal
+          terraform import azurerm_network_security_group.ims-prd-avd-ne-nsg-personal /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-personal
+
+          # Import Network Security Group Rules
+          terraform import azurerm_network_security_rule.avd-DenyAnyToAnyInbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-personal/securityRules/avd-DenyAnyToAnyInbound
+          terraform import azurerm_network_security_rule.avd-AllowDNS-TCP-Outbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-personal/securityRules/avd-AllowDNS-TCP-Outbound
+          terraform import azurerm_network_security_rule.avd-AllowDNS-UDP-Outbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-personal/securityRules/avd-AllowDNS-UDP-Outbound
+          terraform import azurerm_network_security_rule.avd-AllowZscaler-UDP-Outbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-personal/securityRules/avd-AllowZscaler-UDP-Outbound
+          terraform import azurerm_network_security_rule.avd-AllowZscaler-TCP-Outbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-personal/securityRules/avd-AllowZscaler-TCP-Outbound
+          terraform import azurerm_network_security_rule.avd-DenyAnyToAnyOutbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-personal/securityRules/avd-DenyAnyToAnyOutbound
+
+          # ims-prd-avd-ne-nsg-pep
+          terraform import azurerm_network_security_group.ims-prd-avd-ne-nsg-pep /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-pep
+
+          # Import Network Security Group Rules
+          terraform import azurerm_network_security_rule.avd-DenyAnyToAnyInbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-pep/securityRules/avd-DenyAnyToAnyInbound
+          terraform import azurerm_network_security_rule.avd-AllowDNS-TCP-Outbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-pep/securityRules/avd-AllowDNS-TCP-Outbound
+          terraform import azurerm_network_security_rule.avd-AllowDNS-UDP-Outbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-pep/securityRules/avd-AllowDNS-UDP-Outbound
+          terraform import azurerm_network_security_rule.avd-AllowZscaler-UDP-Outbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-pep/securityRules/avd-AllowZscaler-UDP-Outbound
+          terraform import azurerm_network_security_rule.avd-AllowZscaler-TCP-Outbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-pep/securityRules/avd-AllowZscaler-TCP-Outbound
+          terraform import azurerm_network_security_rule.avd-DenyAnyToAnyOutbound /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-pep/securityRules/avd-DenyAnyToAnyOutbound
+
+          # Import Route Table for ims-prd-avd-ne-snet-pool Subnet
+          terraform import azurerm_route_table.ims-prd-avd-ne-rt-pool /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-pool
+
+          # Import Route Rule
+          terraform import azurerm_route.default-route /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-pool/routes/default-route
+          terraform import azurerm_route.ims-prd-avd-ne-udr-vnet-aws /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-pool/routes/ims-prd-avd-ne-udr-vnet-aws
+          terraform import azurerm_route.ims-prd-avd-ne-udr-vnet-mgmt /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-pool/routes/ims-prd-avd-ne-udr-vnet-mgmt
+          terraform import azurerm_route.ims-prd-avd-ne-udr-snet-dnsprin /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-pool/routes/ims-prd-avd-ne-udr-snet-dnsprin
+          terraform import azurerm_route.ims-prd-avd-ne-udr-snet-hubpep /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-pool/routes/ims-prd-avd-ne-udr-snet-hubpep
+
+          # Import Route Table for ims-prd-avd-ne-snet-personal Subnet
+          terraform import azurerm_route_table.ims-prd-avd-ne-rt-personal /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-personal
+
+          # Import Route Rule
+          terraform import azurerm_route.default-route /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-personal/routes/default-route
+          terraform import azurerm_route.ims-prd-avd-ne-udr-vnet-aws /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-personal/routes/ims-prd-avd-ne-udr-vnet-aws
+          terraform import azurerm_route.ims-prd-avd-ne-udr-vnet-mgmt /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-personal/routes/ims-prd-avd-ne-udr-vnet-mgmt
+          terraform import azurerm_route.ims-prd-avd-ne-udr-snet-dnsprin /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-personal/routes/ims-prd-avd-ne-udr-snet-dnsprin
+          terraform import azurerm_route.ims-prd-avd-ne-udr-snet-hubpep /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-personal/routes/ims-prd-avd-ne-udr-snet-hubpep
+
+          # Import Route Table for ims-prd-avd-ne-rt-mgmt Subnet
+          terraform import azurerm_route_table.ims-prd-avd-ne-rt-mgmt /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-mgmt
+
+          # Import Route Rule
+          terraform import azurerm_route.default-route /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-mgmt/routes/default-route
+          terraform import azurerm_route.ims-prd-avd-ne-udr-vnet-aws /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-mgmt/routes/ims-prd-avd-ne-udr-vnet-aws
+          terraform import azurerm_route.ims-prd-avd-ne-udr-vnet-mgmt /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-mgmt/routes/ims-prd-avd-ne-udr-vnet-mgmt
+          terraform import azurerm_route.ims-prd-avd-ne-udr-snet-dnsprin /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-mgmt/routes/ims-prd-avd-ne-udr-snet-dnsprin
+          terraform import azurerm_route.ims-prd-avd-ne-udr-snet-hubpep /subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-mgmt/routes/ims-prd-avd-ne-udr-snet-hubpep
+
+          # Associate NSG and UDR on avd vNet
+          # ims-prd-avd-ne-snet-pool
+          # Import Subnet NSG Association
+          terraform import azurerm_subnet_network_security_group_association.example "/subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-avd-ne-vnet-01/subnets/ims-prd-avd-ne-snet-pool/networkSecurityGroup/subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-pool
+
+          # Import Subnet Route Table Association
+          terraform import azurerm_subnet_route_table_association.example "/subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-avd-ne-vnet-01/subnets/ims-prd-avd-ne-snet-pool/routeTable/subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-pool
+
+          # ims-prd-avd-ne-snet-personal
+          # Import Subnet NSG Association
+          terraform import azurerm_subnet_network_security_group_association.example "/subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-avd-ne-vnet-01/subnets/ims-prd-avd-ne-snet-personal/networkSecurityGroup/subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-personal
+
+          # Import Subnet Route Table Association
+          terraform import azurerm_subnet_route_table_association.example "/subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-avd-ne-vnet-01/subnets/ims-prd-avd-ne-snet-personal/routeTable/subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/routeTables/ims-prd-avd-ne-rt-personal
+
+          # ims-prd-avd-ne-snet-pep
+          # Import Subnet NSG Association
+          terraform import azurerm_subnet_network_security_group_association.example "/subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-avd-ne-vnet-01/subnets/ims-prd-avd-ne-snet-pep/networkSecurityGroup/subscriptions/c2df681b-3e3e-4dbb-816d-602c48efdef2/resourceGroups/ims-prd-avd-ne-rg-network/providers/Microsoft.Network/networkSecurityGroups/ims-prd-avd-ne-nsg-pep
+
+      - name: Terraform Plan AVD Networking
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: avdnw.terraform.tfstate
+        run: |
+          cd modules/avd-sub/avd-sub-nw
+          terraform plan -out=tfplan
+          terraform show -no-color tfplan > plan.txt  
+
+      - name: Upload .terraform.lock.hcl
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-workspace
+          path: /home/runner/work/plateng-azure-inf-LZ/plateng-azure-inf-LZ/cd modules/avd-sub/avd-sub-nw/.terraform.lock.hcl
+          include-hidden-files: true
+
+      - name: Upload plan.txt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-txt-artifact
+          path: modules/avd-sub/avd-sub-nw/plan.txt
+
+      - name: Upload tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-artifact
+          path: modules/avd-sub/avd-sub-nw/tfplan
+
+      - name: Await Manual Approval before apply
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: Nishikant-Sinha-admin_tescoims
+          minimum-approvals: 1
+          issue-title: "Manual approval required for apply"
+          issue-body: "Please approve to proceed with Terraform apply"
+          exclude-workflow-initiator-as-approver: false  
+
+      - name: Terraform Apply AVD Networking
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          TF_VAR_backend_resource_group_name: ${{ secrets.BACKEND_RESOURCE_GROUP_NAME }}
+          TF_VAR_backend_storage_account_name: ${{ secrets.BACKEND_STORAGE_ACCOUNT_NAME }}
+          TF_VAR_backend_container_name: ${{ secrets.BACKEND_CONTAINER_NAME }}
+          TF_VAR_backend_key: avdnw.terraform.tfstate
+        run: |
+          cd modules/avd-sub/avd-sub-nw
+          terraform apply -auto-approve tfplan
+
   DeployPolicies:
     if: ${{ github.event.inputs.jobToRun == 'DeployPolicies' }}
     runs-on: ubuntu-latest
