@@ -16,9 +16,9 @@ terraform {
   required_version = ">= 1.9, < 2.0"  
 }
 
-###############################
+###########################
 # Create NSGs on mgmt vnet
-###############################
+###########################
 #1. Create a nsg to associate with "ims-prd-mgmt-ne-snet-security" subnet in the mgmt vNet 
 resource "azurerm_network_security_group" "ims-prd-mgmt-ne-nsg-security" {
   provider            = azurerm.ims-prd-management
@@ -77,10 +77,9 @@ resource "azurerm_network_security_group" "ims-prd-mgmt-ne-nsg-security" {
   }
 
   tags = {
-    name          = "ims-prd-mgmt-ne-nsg-security"
-    environment   = "prd"
-    function      = "nsg"
-    data_creation = "2025-07-21"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service}-security"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 
   # depends_on = [
@@ -151,6 +150,11 @@ resource "azurerm_network_security_group" "ims-prd-mgmt-ne-nsg-system" {
     function      = "nsg"
     data_creation = "2025-07-21"
   }
+  tags = {
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service}-system"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  }
 
   # depends_on = [
   #   azurerm_resource_group.ims-prd-mgmt-ne-rg-network
@@ -215,10 +219,9 @@ resource "azurerm_network_security_group" "ims-prd-mgmt-ne-nsg-keyvault" {
   }
 
   tags = {
-    name          = "ims-prd-mgmt-ne-nsg-keyvault"
-    environment   = "prd"
-    function      = "nsg"
-    data_creation = "2025-07-21"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service}-keyvault"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
   #  depends_on = [
   #   azurerm_resource_group.ims-prd-mgmt-ne-rg-network
@@ -283,18 +286,17 @@ resource "azurerm_network_security_group" "ims-prd-mgmt-ne-nsg-pep" {
   }
 
   tags = {
-    name          = "ims-prd-mgmt-ne-nsg-pep"
-    environment   = "prd"
-    function      = "nsg"
-    data_creation = "2025-07-21"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service}-pep"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
   #  depends_on = [
   #   azurerm_resource_group.ims-prd-mgmt-ne-rg-network
   # ]
 }
-###############################
+##############
 # Create UDRs
-###############################
+##############
 #1. Create a udr to associate with "ims-prd-mgmt-ne-snet-keyvault" subnet in the mgmt vNet
 resource "azurerm_route_table" "ims-prd-mgmt-ne-rt-keyvault" {
   provider            = azurerm.ims-prd-management
@@ -328,10 +330,9 @@ resource "azurerm_route_table" "ims-prd-mgmt-ne-rt-keyvault" {
   }
 
   tags = {
-    name          = "ims-prd-mgmt-ne-rt-keyvault"
-    environment   = "prd"
-    function      = "route table"
-    data_creation = "2025-07-21"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service2}-keyvault"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
   # depends_on = [
   #   azurerm_resource_group.ims-prd-mgmt-ne-rg-network
@@ -371,10 +372,9 @@ resource "azurerm_route_table" "ims-prd-mgmt-ne-rt-security" {
   }
 
   tags = {
-    name          = "ims-prd-mgmt-ne-rt-security"
-    environment   = "prd"
-    function      = "route table"
-    data_creation = "2025-07-21"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service2}-security"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
   # depends_on = [
   #   azurerm_resource_group.ims-prd-mgmt-ne-rg-network
@@ -414,19 +414,18 @@ resource "azurerm_route_table" "ims-prd-mgmt-ne-rt-system" {
   }
 
   tags = {
-    name          = "ims-prd-mgmt-ne-rt-system"
-    environment   = "prd"
-    function      = "route table"
-    data_creation = "2025-07-21"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service2}-system"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
   # depends_on = [
   #   azurerm_resource_group.ims-prd-mgmt-ne-rg-network
   # ]
 }
 
-################################################################
+###########################################################
 # Associate subnets with required NSG and UDR on Mgmt vNets
-################################################################
+###########################################################
 # 1a. Associate "ims-prd-mgmt-ne-snet-security" subnet with "ims-prd-mgmt-ne-snet-nsg-security" nsg
 resource "azurerm_subnet_network_security_group_association" "ims-prd-mgmt-ne-snet-security-nsg" {
   provider                  = azurerm.ims-prd-management

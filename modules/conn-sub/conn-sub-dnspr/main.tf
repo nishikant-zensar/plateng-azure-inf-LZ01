@@ -58,10 +58,11 @@ resource "azurerm_private_dns_resolver_dns_forwarding_ruleset" "dnsfrs" {
   # private_dns_resolver_id     = azurerm_private_dns_resolver.dnspr.id
 
   private_dns_resolver_outbound_endpoint_ids = [azurerm_private_dns_resolver_outbound_endpoint.outboundep.id]
+
   tags = {
-    Name          = "ims-prd-conn-ne-dnsfrs-01"
-    Environment   = "prd"
-    DateCreated   = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-dnsfrs-01"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 
@@ -88,9 +89,9 @@ resource "azurerm_private_dns_resolver_forwarding_rule" "dnsfr2" {
   }
 }
 
-#####################################################################
+##########################
 # Create Private DNS Zones
-#####################################################################
+##########################
 resource "azurerm_private_dns_zone" "multi" {
   provider            = azurerm.ims-prd-connectivity
   for_each            = toset(var.private_dns_zones)

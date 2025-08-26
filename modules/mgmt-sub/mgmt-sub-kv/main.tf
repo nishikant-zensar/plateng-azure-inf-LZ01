@@ -16,10 +16,9 @@ terraform {
   required_version = ">= 1.9, < 2.0"  
 }
 
-
-#####################################################################
+#########################
 # Create Azure Key Vault
-#####################################################################
+#########################
 
 provider "azurerm" {
   features{}
@@ -88,9 +87,9 @@ resource "azurerm_key_vault" "kv" {
   enabled_for_template_deployment = true
 
   tags = {
-    Name          = "ims-prd-mgmt-ne-kv-01"
-    Environment   = "prd"
-    DateCreated   = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service}-01"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 
@@ -137,9 +136,9 @@ resource "azurerm_private_dns_a_record" "kv_record" {
   ttl                 = 300
 }
 
-#####################################################################
+#################################
 # Create Log Analytics Workspace
-#####################################################################
+#################################
 resource "azurerm_log_analytics_workspace" "log_analytics" {
   provider              = azurerm.ims-prd-management
   # subscription        = ["b63f4e55-499d-4984-9375-f17853ff6e36"]
@@ -148,9 +147,8 @@ resource "azurerm_log_analytics_workspace" "log_analytics" {
   location            = var.location
   
   tags = {
-    Name          = "ims-prd-mgmt-ne-log-analytics-01"
-    Environment   = "prd"
-    DateCreated   = "2025-08-01"
-}
-
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service2}-01"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  }
 }

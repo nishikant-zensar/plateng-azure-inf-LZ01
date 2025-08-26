@@ -20,7 +20,6 @@ provider "azurerm" {
   features {}
 }
 
-
 ####################################################
 # Create "ims-prd-mgmt-ne-vnet-01" management vNet
 ####################################################
@@ -37,15 +36,15 @@ resource "azurerm_virtual_network" "mgmtvnet" {
   }
 
   tags = {
-    Name        = "ims-prd-mgmt-ne-vnet-01"
-    Environment = "prd"
-    DateCreated = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service}-01"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 
 }
-################################################################
+##############################
 # Create Subnets in mgmt vnet
-################################################################
+##############################
 # 1. Create "ims-prd-mgmt-ne-snet-security" subnet for mgmt security traffic at mgmt vNet
 resource "azurerm_subnet" "ims-prd-mgmt-ne-snet-security" {
   provider             = azurerm.ims-prd-management

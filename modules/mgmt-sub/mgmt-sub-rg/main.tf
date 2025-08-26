@@ -27,9 +27,9 @@ resource "azurerm_resource_group" "mgmt" {
   location = var.location
   
   tags = {
-    Name        = "ims-prd-mgmt-ne-rg-network"
-    Environment = "prd"
-    DateCreated = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-${var.suffix}"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 
@@ -39,11 +39,11 @@ resource "azurerm_resource_group" "mgmtdef" {
   provider = azurerm.ims-prd-management
   name     = "ims-prd-mgmt-ne-rg-defender"
   location = var.location
- 
+
   tags = {
-    Name        = "ims-prd-mgmt-ne-rg-defender"
-    Environment = "prd"
-    DateCreated = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-defender"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 # 2. Create Key Vault RG in Management MG
@@ -53,9 +53,9 @@ resource "azurerm_resource_group" "mgmtkv" {
   location = var.location
   
   tags = {
-    Name        = "ims-prd-mgmt-ne-rg-keyvault"
-    Environment = "prd"
-    DateCreated = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-keyvault"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 # 3. Create log-security RG in Management MG
@@ -65,9 +65,9 @@ resource "azurerm_resource_group" "mgmtlsec" {
   location = var.location
   
   tags = {
-    Name        = "ims-prd-mgmt-ne-rg-log-security"
-    Environment = "prd"
-    DateCreated = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-log-security"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 # 4. Create log-system RG in Management MG
@@ -77,9 +77,9 @@ resource "azurerm_resource_group" "mgmtlsys" {
   location = var.location
 
   tags = {
-    Name        = "ims-prd-mgmt-ne-rg-log-system"
-    Environment = "prd"
-    DateCreated = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-log-system"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 # 5. Create Purview RG in Management MG
@@ -89,20 +89,20 @@ resource "azurerm_resource_group" "mgmtpur" {
   location = var.location
   
   tags = {
-    Name        = "ims-prd-mgmt-ne-rg-purview"
-    Environment = "prd"
-    DateCreated = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-purview"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 # 6. Create storage RG in Management MG
-resource "azurerm_resource_group" "mgmtstr" {
+resource "azurerm_resource_group" "mgmtst" {
   provider = azurerm.ims-prd-management
   name     = "ims-prd-mgmt-ne-rg-storage"
   location = var.location
   
   tags = {
-    Name        = "ims-prd-mgmt-ne-rg-storage"
-    Environment = "prd"
-    DateCreated = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-storage"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }

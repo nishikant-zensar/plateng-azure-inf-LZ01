@@ -16,9 +16,9 @@ terraform {
   required_version = ">= 1.9, < 2.0"
 }
 
-#####################################################
+#################################
 # Create Public IP's for Gateway
-#####################################################
+#################################
 # 1. Create "ims-prd-conn-ne-pip-vpng-01" Public IP for VPN Gateway
 
 resource "azurerm_public_ip" "pipvpng01" {
@@ -39,10 +39,11 @@ resource "azurerm_public_ip" "pipvpng01" {
 
   # DDoS protection is only available for Standard SKU
   # ddos_protection_mode = var.ddos_protection_mode
+
   tags = {
-    Name          = "ims-prd-conn-ne-pip-vpng-01"
-    Environment   = "prd"
-    DateCreated   = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service2}-vpng-01"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 # 2. Create "ims-prd-conn-ne-pip-vpng-02" Public IP for VPN Gateway
@@ -66,15 +67,15 @@ resource "azurerm_public_ip" "pipvpng02" {
   # DDoS protection is only available for Standard SKU
   # ddos_protection_mode = var.ddos_protection_mode
   tags = {
-    Name          = "ims-prd-conn-ne-pip-vpng-02"
-    Environment   = "prd"
-    DateCreated   = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service2}-vpng-02"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 
-#####################################################
+############################################################
 # Create Virtual Private Gateway and Local Network Gateways
-#####################################################
+############################################################
 # 1. Create ims-prd-conn-ne-vpng-01 VPN Gateway
 
 resource "azurerm_virtual_network_gateway" "vpn_gw" {
@@ -126,9 +127,9 @@ resource "azurerm_virtual_network_gateway" "vpn_gw" {
   # Key Vault Access, Managed Identity, and Authentication Information (preview) not enabled.
   
   tags = {
-    Name          = "ims-prd-conn-ne-vpng-01"
-    Environment   = "prd"
-    DateCreated   = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-vpng-01"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 # 2. Create Local Network Gateway 1 on VPN Gateway
@@ -205,11 +206,12 @@ resource "azurerm_local_network_gateway" "aws_lgw4" {
   # IPsec/IKE policy is default (no custom policy block)
   # NAT Rules not configured
 
-#  tags = {
-#    Name          = "ims-prd-conn-ne-vnc-01"
-#    Environment   = "prd"
-#    DateCreated   = "2025-08-01"
-#}
+ # tags = {
+ # Name = "${var.org}-${var.env}-${var.sub}-${var.region}-vnc-01"
+#	Environment = var.env
+#	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+ # }
+
 #}
 # 7. Create Gateway Connection 2 on VPN Gateway
 
@@ -228,11 +230,11 @@ resource "azurerm_local_network_gateway" "aws_lgw4" {
   # IPsec/IKE policy is default (no custom policy block)
   # NAT Rules not configured
 
-#  tags = {
-#    Name          = "ims-prd-conn-ne-vnc-02"
-#    Environment   = "prd"
-#    DateCreated   = "2025-08-01"
-#}
+ # tags = {
+ # Name = "${var.org}-${var.env}-${var.sub}-${var.region}-vnc-02"
+#	Environment = var.env
+#	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+ # }
 # }
 
 # 8. Create Gateway Connection 3 on VPN Gateway
@@ -252,11 +254,11 @@ resource "azurerm_local_network_gateway" "aws_lgw4" {
   # IPsec/IKE policy is default (no custom policy block)
   # NAT Rules not configured
 
-#  tags = {
-#    Name          = "ims-prd-conn-ne-vnc-02"
-#    Environment   = "prd"
-#    DateCreated   = "2025-08-01"
-#}
+ # tags = {
+ # Name = "${var.org}-${var.env}-${var.sub}-${var.region}-vnc-03"
+#	Environment = var.env
+#	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+ # }
 # }
 
 # 9. Create Gateway Connection 4 on VPN Gateway
@@ -276,9 +278,9 @@ resource "azurerm_local_network_gateway" "aws_lgw4" {
   # IPsec/IKE policy is default (no custom policy block)
   # NAT Rules not configured
 
-#  tags = {
-#    Name          = "ims-prd-conn-ne-vnc-03"
-#    Environment   = "prd"
-#    DateCreated   = "2025-08-01"
-#}
+ # tags = {
+ # Name = "${var.org}-${var.env}-${var.sub}-${var.region}-vnc-04"
+#	Environment = var.env
+#	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+ # }
 # }

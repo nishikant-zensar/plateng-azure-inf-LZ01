@@ -205,10 +205,10 @@ terraform {
     # ]
 
     tags = {
-      Name          = "ims-prd-conn-ne-nsg-dnsprout"
-      Environment   = "prd"
-      DateCreated   = "2025-08-01"
-      }
+    Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service3}-dnsprout"
+    Environment = var.env
+    DateCreated = formatdate("YYYY-MM-DD", timestamp())
+    }
   }
 
 #3. Create a nsg to associate with "ims-prd-conn-ne-snet-pep" subnet in hub vNet
@@ -274,16 +274,15 @@ terraform {
     # ]
 
     tags = {
-      Name          = "ims-prd-conn-ne-nsg-pep"
-      Environment   = "prd"
-      DateCreated   = "2025-08-01"
-      }
+    Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service3}-pep"
+    Environment = var.env
+    DateCreated = formatdate("YYYY-MM-DD", timestamp())
+    }
  }
 
-
-###################
+#############
 # Create UDR 
-###################
+#############
 
 provider "azurerm" {
   alias           = "ims-prd-connectivity"
@@ -334,11 +333,12 @@ resource "azurerm_route_table" "ims-prd-conn-ne-rt-vpng" {
   # depends_on = [
   #   azurerm_resource_group.ims-prd-conn-ne-rg-network
   # ]
+
   tags = {
-    Name          = "ims-prd-conn-ne-rt-vpng"
-    Environment   = "prd"
-    DateCreated   = "2025-08-01"
-  }
+    Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service4}-vpng"
+    Environment = var.env
+    DateCreated = formatdate("YYYY-MM-DD", timestamp())
+    }
 }
 
 #2. Create a udr to associate with "ims-prd-conn-ne-snet-dnsprin" subnet subnet in hub vNet
@@ -378,10 +378,10 @@ resource "azurerm_route_table" "ims-prd-conn-ne-rt-dnsprin" {
   # ]
 
   tags = {
-    Name          = "ims-prd-conn-ne-rt-dnsprin"
-    Environment   = "prd"
-    DateCreated   = "2025-08-01"
-  }
+    Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service4}-dnsprin"
+    Environment = var.env
+    DateCreated = formatdate("YYYY-MM-DD", timestamp())
+    }
 }
 
 
@@ -422,15 +422,15 @@ resource "azurerm_route_table" "ims-prd-conn-ne-rt-dnsprout" {
   # ]
   
   tags = {
-    Name          = "ims-prd-conn-ne-rt-dnsprout"
-    Environment   = "prd"
-    DateCreated   = "2025-08-01"
-  }
+    Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service4}-dnsprout"
+    Environment = var.env
+    DateCreated = formatdate("YYYY-MM-DD", timestamp())
+    }
 }
 
-################################################################
+###########################################################
 # Associate subnets with required NSG and UDR on Hub vNets
-################################################################
+###########################################################
 # 1. Associate "GatewaySubnet" with "ims-prd-conn-ne-rt-vpng" route table/UDR
 resource "azurerm_subnet_route_table_association" "ims-prd-conn-ne-vpng-rt" {
   provider       = azurerm.ims-prd-connectivity

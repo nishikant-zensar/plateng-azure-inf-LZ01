@@ -16,9 +16,9 @@ terraform {
   required_version = ">= 1.9, < 2.0"  
 }
 
-###############################
+##########################
 # Create NSGs on avd vnet
-###############################
+##########################
 #1. Create a nsg to associate with "ims-prd-avd-ne-snet-pool" subnet in the avd vNet 
 resource "azurerm_network_security_group" "ims-prd-avd-ne-nsg-pool" {
   provider            = azurerm.ims-prd-avd
@@ -115,10 +115,9 @@ resource "azurerm_network_security_group" "ims-prd-avd-ne-nsg-pool" {
   }
 
   tags = {
-    name          = "ims-prd-avd-ne-nsg-pool"
-    environment   = "prd"
-    function      = "nsg"
-    data_creation = "2025-07-21"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service}-pool"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
   # depends_on = [
   #   azurerm_resource_group.ims-prd-avd-ne-rg-network
@@ -221,10 +220,9 @@ resource "azurerm_network_security_group" "ims-prd-avd-ne-nsg-personal" {
   }
 
   tags = {
-    name          = "ims-prd-avd-ne-nsg-personal"
-    environment   = "prd"
-    function      = "nsg"
-    data_creation = "2025-07-21"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service}-personal"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
   # depends_on = [
   #   azurerm_resource_group.ims-prd-avd-ne-rg-network
@@ -327,10 +325,9 @@ resource "azurerm_network_security_group" "ims-prd-avd-ne-nsg-pep" {
   }
 
   tags = {
-    name          = "ims-prd-avd-ne-nsg-pep"
-    environment   = "prd"
-    function      = "nsg"
-    data_creation = "2025-07-21"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service}-pep"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
   # depends_on = [
   #   azurerm_resource_group.ims-prd-avd-ne-rg-network
@@ -388,19 +385,19 @@ resource "azurerm_network_security_group" "ims-prd-avd-ne-nsg-mgmt" {
     destination_address_prefix = "*"
     destination_port_range     = "*"
   }
-    tags = {
-    name          = "ims-prd-avd-ne-nsg-mgmt"
-    environment   = "prd"
-    function      = "nsg"
-    data_creation = "2025-07-21"
+
+  tags = {
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service}-mgmt"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
   # depends_on = [
   #   azurerm_resource_group.ims-prd-avd-ne-rg-network
   # ]
 }
-###############################
+##############
 # Create UDRs
-###############################
+##############
 #1. Create a udr to associate with "ims-prd-avd-ne-snet-pool" subnet in the avd vNet
 resource "azurerm_route_table" "ims-prd-avd-ne-rt-pool" {
   provider            = azurerm.ims-prd-avd
@@ -440,10 +437,9 @@ resource "azurerm_route_table" "ims-prd-avd-ne-rt-pool" {
   }
 
   tags = {
-    name          = "ims-prd-avd-ne-rt-pool"
-    environment   = "prd"
-    function      = "route table"
-    data_creation = "2025-07-21"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service2}-pool"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
   # depends_on = [
   #   azurerm_resource_group.ims-prd-avd-ne-rg-network
@@ -489,10 +485,9 @@ resource "azurerm_route_table" "ims-prd-avd-ne-rt-personal" {
   }
 
   tags = {
-    name          = "ims-prd-avd-ne-rt-personal"
-    environment   = "prd"
-    function      = "route table"
-    data_creation = "2025-07-21"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service2}-personal"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
   # depends_on = [
   #   azurerm_resource_group.ims-prd-avd-ne-rg-network
@@ -541,11 +536,16 @@ resource "azurerm_route_table" "ims-prd-avd-ne-rt-mgmt" {
     next_hop_in_ip_address = "192.168.0.68"
   }
 
+  tags = {
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service2}-mgmt"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  }
 }
 
-################################################################
+###########################################################
 # Associate subnets with required NSG and UDR on Avd vNets
-################################################################
+###########################################################
 # 1a. Associate "ims-prd-avd-ne-snet-pool" subnet with "ims-prd-avd-ne-snet-nsg-pool" nsg
 resource "azurerm_subnet_network_security_group_association" "ims-prd-avd-ne-snet-pool-nsg" {
   provider                  = azurerm.ims-prd-avd

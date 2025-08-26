@@ -21,9 +21,9 @@ provider "azurerm" {
 }
 
 
-##################################################
+###########################################
 # Create "ims-prd-avd-ne-vnet-01" avd vNet
-##################################################
+###########################################
 resource "azurerm_virtual_network" "avdvnet" {
   provider            = azurerm.ims-prd-avd
   resource_group_name = azurerm_resource_group.avd.name
@@ -37,15 +37,15 @@ resource "azurerm_virtual_network" "avdvnet" {
   }
 
   tags = {
-    Name          = "ims-prd-avd-ne-vnet-01"
-    Environment   = "prd"
-    DateCreated   = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-01"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 
-################################################################
+#############################
 # Create Subnets in avd vnet
-################################################################
+#############################
 # 1. Create "ims-prd-avd-ne-snet-pool" subnet for avd pool traffic at avd vNet
 resource "azurerm_subnet" "ims-prd-avd-ne-snet-pool" {
   provider             = azurerm.ims-prd-avd

@@ -25,11 +25,11 @@ resource "azurerm_resource_group" "avd" {
   provider = azurerm.ims-prd-avd
   name     = "ims-prd-avd-ne-rg-network"
   location = var.location
-  
+
   tags = {
-    Name        = "ims-prd-avd-ne-rg-network"
-    Environment = "prd"
-    DateCreated = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-${var.suffix}"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 
@@ -39,11 +39,11 @@ resource "azurerm_resource_group" "avdpool" {
   provider = azurerm.ims-prd-avd
   name     = "ims-prd-avd-ne-rg-pool"
   location = var.location
-  
+
   tags = {
-    Name        = "ims-prd-avd-ne-rg-pool"
-    Environment = "prd"
-    DateCreated = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-pool"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }
 # 2. Create Personal RG in AVD MG
@@ -53,8 +53,8 @@ resource "azurerm_resource_group" "avdpsnl" {
   location = var.location
   
   tags = {
-    Name        = "ims-prd-avd-ne-rg-psnl"
-    Environment = "prd"
-    DateCreated = "2025-08-01"
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-psnl"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
   }
 }

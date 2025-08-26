@@ -143,9 +143,9 @@ resource "azurerm_ip_group" "ims-prd-conn-ne-ZscallerIPg-M2" {
   }
 }
 
-#####################################################
+##############################################
 # Create Azure Firewall and Firewall Policies
-#####################################################
+##############################################
 
 # 1. Create Azure Firewall Policy
 resource "azurerm_firewall_policy" "fw_policy" {
