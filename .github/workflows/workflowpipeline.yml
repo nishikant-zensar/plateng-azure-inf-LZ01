@@ -39,7 +39,7 @@ permissions:
 jobs:
   ConnectivityBootstrap:
     if: ${{ github.event.inputs.jobToRun == 'ConnectivityBootstrap' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -61,7 +61,7 @@ jobs:
     
   ManagementBootstrap:
     if: ${{ github.event.inputs.jobToRun == 'ManagementBootstrap' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -83,7 +83,7 @@ jobs:
 
   AvdBootstrap:
     if: ${{ github.event.inputs.jobToRun == 'AvdBootstrap' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -105,7 +105,7 @@ jobs:
 
   MgmtGroupBootstrap:
     if: ${{ github.event.inputs.jobToRun == 'MgmtGroupBootstrap' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -128,7 +128,7 @@ jobs:
   # Import Management Groups
   ImportManagementGroups:
     if: ${{ github.event.inputs.jobToRun == 'ImportManagementGroups' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -266,7 +266,7 @@ jobs:
 
   ConnRGs:
     if: ${{ github.event.inputs.jobToRun == 'ConnRGs' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -370,7 +370,7 @@ jobs:
 
   ConnvNet:
     if: ${{ github.event.inputs.jobToRun == 'ConnvNet' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -487,7 +487,7 @@ jobs:
 
   ConnFirewall:
     if: ${{ github.event.inputs.jobToRun == 'ConnFirewall' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -610,7 +610,7 @@ jobs:
     
   ConnVPG:
     if: ${{ github.event.inputs.jobToRun == 'ConnVPG' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -730,7 +730,7 @@ jobs:
 
   ConnDNSPR:
     if: ${{ github.event.inputs.jobToRun == 'ConnDNSPR' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -846,7 +846,7 @@ jobs:
 
   ConnNetwork:
     if: ${{ github.event.inputs.jobToRun == 'ConnNetwork' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -1032,7 +1032,7 @@ jobs:
 
   MgmtRGs:
     if: ${{ github.event.inputs.jobToRun == 'MgmtRGs' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -1149,7 +1149,7 @@ jobs:
   
   MgmtvNet:
     if: ${{ github.event.inputs.jobToRun == 'MgmtvNet' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -1262,7 +1262,7 @@ jobs:
 
   MgmtKV_LogAnalytics:
     if: ${{ github.event.inputs.jobToRun == 'MgmtKV_LogAnalytics' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -1381,7 +1381,7 @@ jobs:
 
   MgmtNetwork:
     if: ${{ github.event.inputs.jobToRun == 'MgmtNetwork' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -1568,7 +1568,7 @@ jobs:
 
   AvdRGs:
     if: ${{ github.event.inputs.jobToRun == 'AvdRGs' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -1676,7 +1676,7 @@ jobs:
 
   AvdvNet:
     if: ${{ github.event.inputs.jobToRun == 'AvdvNet' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -1789,7 +1789,7 @@ jobs:
 
   AvdNetwork:
     if: ${{ github.event.inputs.jobToRun == 'AvdNetwork' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -1974,7 +1974,7 @@ jobs:
 
   DeployPolicies:
     if: ${{ github.event.inputs.jobToRun == 'DeployPolicies' }}
-    runs-on: ubuntu-latest
+    runs-on: plateng-ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

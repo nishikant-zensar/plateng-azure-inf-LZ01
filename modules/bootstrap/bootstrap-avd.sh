@@ -4,7 +4,7 @@
 # Storage Account in AVD Subscription
 RESOURCE_GROUP="ims-prd-avd-ne-rg-tfstate" # Resource group under respective subscription for Terraform state management
 LOCATION="northeurope" # Azure region
-STORAGE_ACCOUNT="prdavdlznstr" # must be globally unique, 3-24 chars, lowercase/numbers only
+STORAGE_ACCOUNT="prdavdalzst" # must be globally unique, 3-24 chars, lowercase/numbers only
 CONTAINER="tfstate"
 
 # Create resource group

@@ -4,7 +4,7 @@
 # Storage Account in Management Subscription
 RESOURCE_GROUP="ims-prd-mgmt-ne-rg-tfstate" # Resource group under respective subscription for Terraform state management
 LOCATION="northeurope" # Azure region
-STORAGE_ACCOUNT="prdmgmtlznstr" # must be globally unique, 3-24 chars, lowercase/numbers only
+STORAGE_ACCOUNT="prdmgmtalzst" # must be globally unique, 3-24 chars, lowercase/numbers only
 CONTAINER="tfstate"
 
 # Create resource group
