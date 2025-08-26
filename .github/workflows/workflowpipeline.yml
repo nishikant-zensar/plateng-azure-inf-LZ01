@@ -37,7 +37,7 @@ permissions:
   issues: write
 
 jobs:
-  Conn Bootstrap:
+  ConnectivityBootstrap:
     if: ${{ github.event.inputs.jobToRun == 'ConnectivityBootstrap' }}
     runs-on: ubuntu-latest
     steps:
@@ -59,7 +59,7 @@ jobs:
           chmod +x modules/bootstrap/bootstrap-conn.sh
           modules/bootstrap/bootstrap-conn.sh
     
-  Mgmt Bootstrap:
+  ManagementBootstrap:
     if: ${{ github.event.inputs.jobToRun == 'ManagementBootstrap' }}
     runs-on: ubuntu-latest
     steps:
@@ -81,7 +81,7 @@ jobs:
           chmod +x modules/bootstrap/bootstrap-mgmt.sh
           modules/bootstrap/bootstrap-mgmt.sh
 
-  Avd Bootstrap:
+  AvdBootstrap:
     if: ${{ github.event.inputs.jobToRun == 'AvdBootstrap' }}
     runs-on: ubuntu-latest
     steps:
@@ -103,7 +103,7 @@ jobs:
           chmod +x modules/bootstrap/bootstrap-avd.sh
           modules/bootstrap/bootstrap-avd.sh
 
-  Mgmt Grp Bootstrap:
+  MgmtGroupBootstrap:
     if: ${{ github.event.inputs.jobToRun == 'MgmtGroupBootstrap' }}
     runs-on: ubuntu-latest
     steps:
