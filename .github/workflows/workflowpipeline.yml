@@ -21,7 +21,7 @@ on:
           - ConnNetwork
           - MgmtRGs
           - MgmtvNet
-          - MgmtKV&LogAnalytics
+          - MgmtKV_LogAnalytics
           - MgmtNetwork
           - AvdRGs
           - AvdvNet
@@ -1260,8 +1260,8 @@ jobs:
           cd modules/mgmt-sub/mgmt-sub-vnet
           terraform apply -auto-approve tfplan
 
-  MgmtKV&LogAnalytics:
-    if: ${{ github.event.inputs.jobToRun == 'MgmtKV&LogAnalytics' }}
+  MgmtKV_LogAnalytics:
+    if: ${{ github.event.inputs.jobToRun == 'MgmtKV_LogAnalytics' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
