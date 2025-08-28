@@ -1,9 +1,9 @@
 terraform {
   backend "azurerm" {
-    resource_group_name  = "ims-prd-lz-ne-rg-terraformstate"
-    storage_account_name = "imslandingznstr"
+    resource_group_name  = "ims-prd-conn-ne-rg-tfstate"
+    storage_account_name = "prdconnalznst"
     container_name       = "tfstate"
-    key                  = "hubspoke.terraform.tfstate" # Path to the state file in the container
+    key                  = "connvNet.terraform.tfstate" # Path to the state file in the container
     use_oidc_auth        = true
     use_azuread_auth     = true
   }
@@ -21,9 +21,9 @@ provider "azurerm" {
 }
 
 
-####################################################################
+#############################################################
 # Create "ims-prd-conn-ne-vnet-hub-01" connectivity-hub-vnet
-####################################################################
+#############################################################
 resource "azurerm_virtual_network" "hubvnet" {
   provider            = azurerm.ims-prd-connectivity
   resource_group_name = azurerm_resource_group.conn.name
@@ -48,9 +48,9 @@ resource "azurerm_virtual_network" "hubvnet" {
   }
 }
 
-################################################################
+############################
 # Create subnets in hubvnet
-################################################################
+############################
 # 1. Create "AzureFirewallSubnet" subnet for Firewall traffic at hub vNet
 resource "azurerm_subnet" "AzureFirewallSubnet" {
   provider             = azurerm.ims-prd-connectivity

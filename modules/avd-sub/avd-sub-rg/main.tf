@@ -1,9 +1,9 @@
 terraform {
   backend "azurerm" {
-    resource_group_name  = "ims-prd-lz-ne-rg-terraformstate"
-    storage_account_name = "imslandingznstr"
+    resource_group_name  = "ims-prd-avd-ne-rg-tfstate"
+    storage_account_name = "prdavdalznst"
     container_name       = "tfstate"
-    key                  = "hubspoke.terraform.tfstate" # Path to the state file in the container
+    key                  = "avdrg.terraform.tfstate" # Path to the state file in the container
     use_oidc_auth        = true
     use_azuread_auth     = true
   }
@@ -20,7 +20,7 @@ provider "azurerm" {
   features {}
 }
 
-# 3. Resource Groups for ims-prd-avd (avd subscription)
+# Resource Groups for ims-prd-avd (avd subscription)
 resource "azurerm_resource_group" "avd" {
   provider = azurerm.ims-prd-avd
   name     = "ims-prd-avd-ne-rg-network"

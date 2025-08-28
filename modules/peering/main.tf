@@ -1,9 +1,9 @@
 terraform {
   backend "azurerm" {
-    resource_group_name  = "ims-prd-lz-ne-rg-terraformstate"
-    storage_account_name = "imslandingznstr"
+    resource_group_name  = "ims-prd-conn-ne-rg-tfstate"
+    storage_account_name = "prdconnalznst"
     container_name       = "tfstate"
-    key                  = "hubspoke.terraform.tfstate" # Path to the state file in the container
+    key                  = "vnetpeering.terraform.tfstate" # Path to the state file in the container
     use_oidc_auth        = true
     use_azuread_auth     = true
   }
@@ -20,9 +20,9 @@ provider "azurerm" {
   features {}
 }
 
-################################################################
+########################
 # Peering Between vNets
-################################################################
+########################
 # Task 1: Peering between Hub and Mgmt vNet
 resource "azurerm_virtual_network_peering" "hub_to_mgmt" {
   name                      = "ims-prd-conn-ne-vnet-hub-01-TO-ims-prd-mgmt-ne-vnet-01"

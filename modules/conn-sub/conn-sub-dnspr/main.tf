@@ -1,3 +1,25 @@
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "ims-prd-conn-ne-rg-tfstate"
+    storage_account_name = "prdconnalznst"
+    container_name       = "tfstate"
+    key                  = "conndnspr.terraform.tfstate" # Path to the state file in the container
+    use_oidc_auth        = true
+    use_azuread_auth     = true
+  }
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 4.0"
+    }
+  }
+  required_version = ">= 1.0"  
+}
+
+provider "azurerm" {
+  features {}
+}
+
 #####################################################################
 # Create Azure DNS Private Resolver with Inbound & Outbound Endpoints
 #####################################################################
@@ -77,24 +99,13 @@ resource "azurerm_private_dns_resolver_forwarding_rule" "dnsfr" {
     port       = 53
   }
 }
-# Create Outbound Endpoint Forwarding Rule 2
-resource "azurerm_private_dns_resolver_forwarding_rule" "dnsfr2" {
-  name                    = "ims-prd-conn-ne-dnsfrs-rule-02"
-  dns_forwarding_ruleset_id = "/subscriptions/ecd60543-12a0-4899-9e5f-21ec01592207/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/dnsForwardingRulesets/ims-prd-conn-ne-dnsfrs-01"
-  domain_name             = "aws.tescoimscloud.org."
-  enabled                 = true
-  target_dns_servers {
-    ip_address = "1.1.1.1"
-    port       = 53
-  }
-}
 
 ##########################
 # Create Private DNS Zones
 ##########################
-resource "azurerm_private_dns_zone" "multi" {
-  provider            = azurerm.ims-prd-connectivity
-  for_each            = toset(var.private_dns_zones)
-  name                = each.value
-  resource_group_name = data.azurerm_resource_group.connsub.name
-}
+# resource "azurerm_private_dns_zone" "multi" {
+#  provider            = azurerm.ims-prd-connectivity
+#  for_each            = toset(var.private_dns_zones)
+#  name                = each.value
+#  resource_group_name = data.azurerm_resource_group.connsub.name
+# }

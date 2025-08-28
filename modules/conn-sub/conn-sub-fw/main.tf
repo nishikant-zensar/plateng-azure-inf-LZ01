@@ -1,9 +1,9 @@
 terraform {
   backend "azurerm" {
-    resource_group_name  = "ims-prd-lz-ne-rg-terraformstate"
-    storage_account_name = "imslandingznstr"
+    resource_group_name  = "ims-prd-conn-ne-rg-tfstate"
+    storage_account_name = "prdconnalznst"
     container_name       = "tfstate"
-    key                  = "networking.terraform.tfstate" # Path to the state file in the container
+    key                  = "connfw.terraform.tfstate" # Path to the state file in the container
     use_oidc_auth        = true
     use_azuread_auth     = true
   }
@@ -16,9 +16,9 @@ terraform {
   required_version = ">= 1.9, < 2.0"
 }
 
-#####################################################
+################################
 # Create Public IP for Firewall
-#####################################################
+################################
 # 3. Create "ims-prd-conn-ne-pip-afw-01" Public IP for Firewall
 
 resource "azurerm_public_ip" "pipafw01" {

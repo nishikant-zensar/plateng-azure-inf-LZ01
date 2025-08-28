@@ -1,7 +1,7 @@
 terraform {
   backend "azurerm" {
-    resource_group_name  = "ims-prd-mgmt-ne-rg-mgmttf"
-    storage_account_name = "prdmgmtgrstr"
+    resource_group_name  = "ims-prd-mgmt-ne-rg-mgtfstate"
+    storage_account_name = "prdmgmtmgst"
     container_name       = "tfstate"
     key                  = "mgmtgrp.terraform.tfstate" # Path to the state file in the container
     use_oidc_auth        = true
@@ -21,7 +21,7 @@ terraform {
 # }
 
 ####################################
-# Create the Top Management Group  #
+# Create the Top Management Group
 ####################################
 resource "azurerm_management_group" "TescoIMSRootMG" {
   name         = "IMS-Root"       # Unique name for the management group
@@ -30,7 +30,7 @@ resource "azurerm_management_group" "TescoIMSRootMG" {
 }
 
 ##############################
-# Create 1st Level Child MGs #
+# Create 1st Level Child MGs
 ##############################
 # Platform Root Management Group
 resource "azurerm_management_group" "ims-root-platform" {
@@ -70,7 +70,7 @@ resource "azurerm_management_group" "ims-root-decommission" {
 }
 
 #################################################
-# Create Child MGs under "ims-root-platform" MG #
+# Create Child MGs under "ims-root-platform" MG
 ################################################
 # 1. prd platform MG under "ims-root-platform" MG
 resource "azurerm_management_group" "ims-platform-prd" {
@@ -93,7 +93,7 @@ resource "azurerm_management_group" "ims-platform-ppte" {
 }
 
 #####################################################
-# Create Child MGs under "ims-root-environments" MG #
+# Create Child MGs under "ims-root-environments" MG
 #####################################################
 # 1.  dev MG under "ims-root-environments" MG
 resource "azurerm_management_group" "ims-env-dev" {
