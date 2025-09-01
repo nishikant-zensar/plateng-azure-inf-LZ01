@@ -250,7 +250,8 @@ jobs:
           issue-title: "Manual approval required for apply"
           issue-body: "Please approve to proceed with Terraform apply"
           exclude-workflow-initiator-as-approver: false
-
+      
+      # To be commented to avoid accidental updates
       - name: Terraform Apply management groups
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT3_ID }}

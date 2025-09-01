@@ -19,7 +19,7 @@ terraform {
 ################################
 # Create Public IP for Firewall
 ################################
-# 3. Create "ims-prd-conn-ne-pip-afw-01" Public IP for Firewall
+# Create "ims-prd-conn-ne-pip-afw-01" Public IP for Firewall
 
 resource "azurerm_public_ip" "pipafw01" {
   name                = "ims-prd-conn-ne-pip-afw-01"
