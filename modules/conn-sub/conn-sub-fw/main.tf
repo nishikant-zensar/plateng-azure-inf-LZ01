@@ -209,7 +209,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "coreplat_group" {
   #}
   network_rule_collection {
     name     = "ims-prd-conn-ne-afwprc-coreplat-net"
-    priority = 200
+    priority = 120
     action   = "Allow"
 
     rule {
@@ -259,22 +259,67 @@ resource "azurerm_firewall_policy_rule_collection_group" "coreplat_group" {
 
 rule {
       name                  = "ims-prd-conn-ne-afwpr-mgmtip-out"
-      source_addresses      = ["192.168.10.0/24"]
+      source_addresses      = ["192.168.10.0/24,192.168.8.0/22"]
       destination_addresses = ["169.254.169.254,168.63.129.16"]
       protocols             = ["TCP"]
-      destination_ports     = ["80"]
+      destination_ports     = ["3390", "3478", "49152", "65535"]
       description           = "The AVD session hosts needs to access this list of FQDNs and endpoints for Azure Virtual Desktop. All entries are outbound, it is not required to open inbound ports for AVD."
+    }
+
+rule {
+      name                  = "ims-prd-conn-ne-afwpr-mgmtrdpshortpath-out"
+      source_addresses      = ["192.168.10.0/24, 192.168.8.0/22"]
+      destination_addresses = ["20.202.0.0/16, 51.5.0.0/16"]
+      protocols             = ["UDP"]
+      destination_ports     = ["80"]
+      description           = "Requirements for RDP Shortpath for the session host virtual network."
+    }
+
+rule {
+      name                  = "ims-prd-conn-ne-afwpr-avdawsdc-out"
+      source_addresses      = ["192.168.8.0/22"]
+      destination_addresses = ["10.0.71.42, 10.0.71.80, 10.0.71.171"]
+      protocols             = ["TCP", "UDP"]
+      destination_ports     = ["53", "88" ,"464", "389"]
+      description           = "DNS, Kerberos, Kerberos password change, LDAP"
+    }
+
+rule {
+      name                  = "ims-prd-conn-ne-afwpr-avdawsdcntp-out"
+      source_addresses      = ["192.168.8.0/22"]
+      destination_addresses = ["10.0.71.42, 10.0.71.80, 10.0.71.171"]
+      protocols             = ["UDP"]
+      destination_ports     = ["123"]
+      description           = "W32Time"
+    }
+
+rule {
+      name                  = "ims-prd-conn-ne-afwpr-avdawsdc01-out"
+      source_addresses      = ["192.168.8.0/22"]
+      destination_addresses = ["10.0.71.42, 10.0.71.80, 10.0.71.171"]
+      protocols             = ["TCP"]
+      destination_ports     = ["135", "445", "636", "3268", "3269", "49152-65535"]
+      description           = "RPC Endpoint Mapper, SMB, LDAP SSL, LDAP GC, LDAP GC SSL, RPC for LSA, SAM, NetLogon"
+    }
+
+rule {
+      name                  = "ims-prd-conn-ne-afwpr-avdawscert-out"
+      source_addresses      = ["192.168.8.0/22"]
+      destination_addresses = ["10.0.71.48, 10.0.71.122"]
+      protocols             = ["TCP"]
+      destination_ports     = ["80", "443"]
+      description           = "Web Entrollment, OCSP, NDES"
     }
   }
    
  application_rule_collection {
     name     = "ims-prd-conn-ne-afwprc-coreplat-app"
-    priority = 300
+    priority = 130
     action   = "Allow"
 
    rule {
-      name                  = "ims-prd-conn-ne-afwpr-mgmtfqdn-out"
-      source_addresses      = ["192.168.10.0/24"]
+      name                  = "ims-prd-conn-ne-afwpr-avdfqdn-out"
+      source_addresses      = ["192.168.10.0/24, 192.168.8.0/22"]
       destination_fqdns     = ["login.microsoftonline.com","*.wvd.microsoft.com","catalogartifact.azureedge.net","*.prod.warm.ingest.monitor.core.windows.net","gcs.prod.monitoring.core.windows.net","azkms.core.windows.net","mrsglobalsteus2prod.blob.core.windows.net","wvdportalstorageblob.blob.core.windows.net","oneocsp.microsoft.com","www.microsoft.com","aka.ms","login.windows.net","*.events.data.microsoft.com","www.msftconnecttest.com","*.prod.do.dsp.mp.microsoft.com","*.sfx.ms","*.digicert.com","*.azure-dns.com","*.azure-dns.net","*eh.servicebus.windows.net"]
       protocols {
         type = "Http"

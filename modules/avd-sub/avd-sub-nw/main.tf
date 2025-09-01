@@ -114,6 +114,45 @@ resource "azurerm_network_security_group" "ims-prd-avd-ne-nsg-pool" {
     destination_port_range     = "*"
   }
 
+  security_rule {
+    name                       = "avd-AllowAnyToAD-TCP-Outbound"
+    priority                   = 2999
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["10.0.71.42", "10.0.71.80", "10.0.71.171"]
+    destination_port_ranges    = ["53", "88", "464", "389", "135", "445", "636", "3268", "3269","49152-65535"]
+    description                = "DNS, Kerberos, Kerberos password change, LDAP"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToAD-UDP-Outbound"
+    priority                   = 2998
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Udp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["10.0.71.42", "10.0.71.80", "10.0.71.171"]
+    destination_port_ranges    = ["53", "88", "464", "389", "123"]
+    description                = "DNS, Kerberos, Kerberos password change, LDAP"
+  }
+
+    security_rule {
+    name                       = "avd-AllowAnyToADCert-TCP-Outbound"
+    priority                   = 2997
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["10.0.71.48", "10.0.71.122"]
+    destination_port_ranges    = ["80", "443"]
+    description                = "Web Entrollment, OCSP, NDES"
+  }
+
   tags = {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service}-pool"
 	Environment = var.env
@@ -217,6 +256,45 @@ resource "azurerm_network_security_group" "ims-prd-avd-ne-nsg-personal" {
     source_port_range          = "*"
     destination_address_prefix = "*"
     destination_port_range     = "*"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToAD-TCP-Outbound"
+    priority                   = 2999
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["10.0.71.42", "10.0.71.80", "10.0.71.171"]
+    destination_port_ranges    = ["53", "88", "464", "389", "135", "445", "636", "3268", "3269","49152-65535"]
+    description                = "DNS, Kerberos, Kerberos password change, LDAP"
+  }
+
+    security_rule {
+    name                       = "avd-AllowAnyToAD-UDP-Outbound"
+    priority                   = 2998
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Udp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["10.0.71.42", "10.0.71.80", "10.0.71.171"]
+    destination_port_ranges    = ["53", "88", "464", "389", "123"]
+    description                = "DNS, Kerberos, Kerberos password change, LDAP"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToADCert-TCP-Outbound"
+    priority                   = 2997
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["10.0.71.48", "10.0.71.122"]
+    destination_port_ranges    = ["80", "443"]
+    description                = "Web Entrollment, OCSP, NDES"
   }
 
   tags = {
@@ -324,6 +402,45 @@ resource "azurerm_network_security_group" "ims-prd-avd-ne-nsg-pep" {
     destination_port_range     = "*"
   }
 
+  security_rule {
+    name                       = "avd-AllowAnyToAD-TCP-Outbound"
+    priority                   = 2999
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["10.0.71.42", "10.0.71.80", "10.0.71.171"]
+    destination_port_ranges    = ["53", "88", "464", "389", "135", "445", "636", "3268", "3269","49152-65535"]
+    description                = "DNS, Kerberos, Kerberos password change, LDAP"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToAD-UDP-Outbound"
+    priority                   = 2998
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Udp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["10.0.71.42", "10.0.71.80", "10.0.71.171"]
+    destination_port_ranges    = ["53", "88", "464", "389", "123"]
+    description                = "DNS, Kerberos, Kerberos password change, LDAP"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToADCert-TCP-Outbound"
+    priority                   = 2997
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["10.0.71.48", "10.0.71.122"]
+    destination_port_ranges    = ["80", "443"]
+    description                = "Web Entrollment, OCSP, NDES"
+  }
+
   tags = {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service}-pep"
 	Environment = var.env
@@ -384,6 +501,45 @@ resource "azurerm_network_security_group" "ims-prd-avd-ne-nsg-mgmt" {
     source_port_range          = "*"
     destination_address_prefix = "*"
     destination_port_range     = "*"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToAD-TCP-Outbound"
+    priority                   = 2999
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["10.0.71.42", "10.0.71.80", "10.0.71.171"]
+    destination_port_ranges    = ["53", "88", "464", "389", "135", "445", "636", "3268", "3269","49152-65535"]
+    description                = "DNS, Kerberos, Kerberos password change, LDAP"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToAD-UDP-Outbound"
+    priority                   = 2998
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Udp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["10.0.71.42", "10.0.71.80", "10.0.71.171"]
+    destination_port_ranges    = ["53", "88", "464", "389", "123"]
+    description                = "DNS, Kerberos, Kerberos password change, LDAP"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToADCert-TCP-Outbound"
+    priority                   = 2997
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["10.0.71.48", "10.0.71.122"]
+    destination_port_ranges    = ["80", "443"]
+    description                = "Web Entrollment, OCSP, NDES"
   }
 
   tags = {

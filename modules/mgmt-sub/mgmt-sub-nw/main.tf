@@ -145,12 +145,6 @@ resource "azurerm_network_security_group" "ims-prd-mgmt-ne-nsg-system" {
   }
 
   tags = {
-    name          = "ims-prd-mgmt-ne-nsg-system"
-    environment   = "prd"
-    function      = "nsg"
-    data_creation = "2025-07-21"
-  }
-  tags = {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service}-system"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())

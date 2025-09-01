@@ -107,12 +107,12 @@ terraform {
 // depends_on = [
 //   azurerm_resource_group.ims-prd-conn-ne-rg-network
 // ]
-    
+
     tags = {
-      Name          = "ims-prd-conn-ne-nsg-dnsprin"
-      Environment   = "prd"
-      DateCreated   = "2025-08-01"
-      }
+    Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service3}-dnsprin"
+    Environment = var.env
+    DateCreated = formatdate("YYYY-MM-DD", timestamp())
+    }
   }
 
   # 2. Create a nsg to associate with "ims-prd-conn-ne-snet-dnsprout" subnet in hub vNet
