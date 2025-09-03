@@ -149,8 +149,151 @@ resource "azurerm_network_security_group" "ims-prd-avd-ne-nsg-pool" {
     source_address_prefix      = "192.168.8.0/22"
     source_port_range          = "*"
     destination_address_prefixes = ["10.0.71.48", "10.0.71.122"]
-    destination_port_ranges    = ["80", "443"]
-    description                = "Web Entrollment, OCSP, NDES"
+    destination_port_ranges    = ["80", "443", "135", "445"]
+    description                = "AD Certificate Server - Web Enrollment, OCSP, NDES, RPC Endpoint Mapper, SMB"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToInternetOutbound"
+    priority                   = 2000
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "Internet" # Service Tag
+    destination_port_ranges    = ["80", "443", "1688"]
+    description                = "Windows activation, Certificates, Microsoft URL shortener, used during session host deployment on Azure Local, Service Traffic, Telemetry Service, To Detect if the session host is connected to the internet, Windows Update, Updates for OneDrive Client software, Certificate Revocation check, azure DNS resolution"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToAzOut-TCP-Outbound"
+    priority                   = 2996
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["169.254.169.254", "168.63.129.16"]
+    destination_port_ranges    = ["80"]
+    description                = "Azure Instance Metadata service endpoint, Session host health monitoring"
+  }
+
+  security_rule {
+    name                       = "avd-avd-AllowAnyToSXSOut-TCPOutbound"
+    priority                   = 1999
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "Storage" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Agent and side-by-side (SXS) stack updates"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToWindowsVDIOut-TCPOutbound"
+    priority                   = 1998
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "WindowsVirtualDesktop" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Service Traffic"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAuthMsOnlineOut-TCP-Outbound"
+    priority                   = 2994
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureActiveDirectory" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Authentication to Microsoft Online Services, Sign in to Microsoft Online Services and Microsoft 365"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAZEventHubOut-TCP-Outbound"
+    priority                   = 2989
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "EventHub" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Diagnostic settings"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAZMktPlaceOut-TCP-Outbound"
+    priority                   = 2991
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureFrontDoor.Frontend" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Azure Marketplace"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAZMonitorOut-TCP-Outbound"
+    priority                   = 2990
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureMonitor" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Agent traffic, Diagnostic output"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAZportalSupportOut-TCP-Outbound"
+    priority                   = 2993
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureCloud" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Azure portal support"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToCrtOut-TCP-Outbound"
+    priority                   = 2992
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureFrontDoor.FirstParty" # Service Tag
+    destination_port_ranges    = ["80"]
+    description                = "Certificates"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToRDPShortpathOut-TCP-Outbound"
+    priority                   = 2995
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Udp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["20.202.0.0/16", "51.5.0.0/16"]
+    destination_port_ranges    = ["3478"]
+    description                = "STUN/TURN relay  for RDP Shortpath over public network"
   }
 
   tags = {
@@ -293,8 +436,151 @@ resource "azurerm_network_security_group" "ims-prd-avd-ne-nsg-personal" {
     source_address_prefix      = "192.168.8.0/22"
     source_port_range          = "*"
     destination_address_prefixes = ["10.0.71.48", "10.0.71.122"]
+    destination_port_ranges    = ["80", "443", "135", "445"]
+    description                = "AD Certificate Server - Web Enrollment, OCSP, NDES, RPC Endpoint Mapper, SMB"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToInternetOutbound"
+    priority                   = 2000
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "Internet" # Service Tag
+    destination_port_ranges    = ["80", "443", "1688"]
+    description                = "Windows activation, Certificates, Microsoft URL shortener, used during session host deployment on Azure Local, Service Traffic, Telemetry Service, To Detect if the session host is connected to the internet, Windows Update, Updates for OneDrive Client software, Certificate Revocation check, azure DNS resolution"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToAzOut-TCP-Outbound"
+    priority                   = 2996
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["169.254.169.254", "168.63.129.16"]
     destination_port_ranges    = ["80", "443"]
-    description                = "Web Entrollment, OCSP, NDES"
+    description                = "Azure Instance Metadata service endpoint, Session host health monitoring"
+  }
+
+  security_rule {
+    name                       = "avd-avd-AllowAnyToSXSOut-TCPOutbound"
+    priority                   = 1999
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "Storage" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Agent and side-by-side (SXS) stack updates"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToWindowsVDIOut-TCPOutbound"
+    priority                   = 1998
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "WindowsVirtualDesktop" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Service Traffic"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAuthMsOnlineOut-TCP-Outbound"
+    priority                   = 2994
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureActiveDirectory" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Authentication to Microsoft Online Services, Sign in to Microsoft Online Services and Microsoft 365"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAZEventHubOut-TCP-Outbound"
+    priority                   = 2989
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "EventHub" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Diagnostic settings"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAZMktPlaceOut-TCP-Outbound"
+    priority                   = 2991
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureFrontDoor.Frontend" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Azure Marketplace"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAZMonitorOut-TCP-Outbound"
+    priority                   = 2990
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureMonitor" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Agent traffic, Diagnostic output"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAZportalSupportOut-TCP-Outbound"
+    priority                   = 2993
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureCloud" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Azure portal support"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToCrtOut-TCP-Outbound"
+    priority                   = 2992
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureFrontDoor.FirstParty" # Service Tag
+    destination_port_ranges    = ["80"]
+    description                = "Certificates"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToRDPShortpathOut-TCP-Outbound"
+    priority                   = 2995
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Udp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["20.202.0.0/16", "51.5.0.0/16"]
+    destination_port_ranges    = ["3478"]
+    description                = "STUN/TURN relay  for RDP Shortpath over public network"
   }
 
   tags = {
@@ -437,8 +723,138 @@ resource "azurerm_network_security_group" "ims-prd-avd-ne-nsg-pep" {
     source_address_prefix      = "192.168.8.0/22"
     source_port_range          = "*"
     destination_address_prefixes = ["10.0.71.48", "10.0.71.122"]
-    destination_port_ranges    = ["80", "443"]
-    description                = "Web Entrollment, OCSP, NDES"
+    destination_port_ranges    = ["80", "443", "135", "445"]
+    description                = "AD Certificate Server - Web Enrollment, OCSP, NDES, RPC Endpoint Mapper, SMB"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToInternetOutbound"
+    priority                   = 2000
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.11.128/26"
+    source_port_range          = "*"
+    destination_address_prefix = "Internet" # Service Tag
+    destination_port_ranges    = ["80", "443", "1688"]
+    description                = "Windows activation, Certificates, Microsoft URL shortener, used during session host deployment on Azure Local, Service Traffic, Telemetry Service, To Detect if the session host is connected to the internet, Windows Update, Updates for OneDrive Client software, Certificate Revocation check, azure DNS resolution"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToAzOut-TCP-Outbound"
+    priority                   = 2996
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["169.254.169.254", "168.63.129.16"]
+    destination_port_ranges    = ["80"]
+    description                = "Azure Instance Metadata service endpoint, Session host health monitoring"
+  }
+
+  security_rule {
+    name                       = "avd-avd-AllowAnyToSXSOut-TCPOutbound"
+    priority                   = 1999
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "Storage" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Agent and side-by-side (SXS) stack updates"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToWindowsVDIOut-TCPOutbound"
+    priority                   = 1998
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "WindowsVirtualDesktop" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Service Traffic"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAuthMsOnlineOut-TCP-Outbound"
+    priority                   = 2994
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureActiveDirectory" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Authentication to Microsoft Online Services, Sign in to Microsoft Online Services and Microsoft 365"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAZEventHubOut-TCP-Outbound"
+    priority                   = 2989
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "EventHub" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Diagnostic settings"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAZMktPlaceOut-TCP-Outbound"
+    priority                   = 2991
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureFrontDoor.Frontend" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Azure Marketplace"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAZMonitorOut-TCP-Outbound"
+    priority                   = 2990
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureMonitor" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Agent traffic, Diagnostic output"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAZportalSupportOut-TCP-Outbound"
+    priority                   = 2993
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureCloud" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Azure portal support"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToCrtOut-TCP-Outbound"
+    priority                   = 2992
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureFrontDoor.FirstParty" # Service Tag
+    destination_port_ranges    = ["80"]
+    description                = "Certificates"
   }
 
   tags = {
@@ -538,9 +954,153 @@ resource "azurerm_network_security_group" "ims-prd-avd-ne-nsg-mgmt" {
     source_address_prefix      = "192.168.8.0/22"
     source_port_range          = "*"
     destination_address_prefixes = ["10.0.71.48", "10.0.71.122"]
-    destination_port_ranges    = ["80", "443"]
-    description                = "Web Entrollment, OCSP, NDES"
+    destination_port_ranges    = ["80", "443", "135", "445"]
+    description                = "AD Certificate Server - Web Enrollment, OCSP, NDES, RPC Endpoint Mapper, SMB"
   }
+
+  security_rule {
+    name                       = "avd-AllowAnyToInternetOutbound"
+    priority                   = 2000
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.10.0/24"
+    source_port_range          = "*"
+    destination_address_prefix = "Internet" # Service Tag
+    destination_port_ranges    = ["80", "443", "1688"]
+    description                = "Windows activation, Certificates, Microsoft URL shortener, used during session host deployment on Azure Local, Service Traffic, Telemetry Service, To Detect if the session host is connected to the internet, Windows Update, Updates for OneDrive Client software, Certificate Revocation check, azure DNS resolution"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToAzOut-TCP-Outbound"
+    priority                   = 2996
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["169.254.169.254", "168.63.129.16"]
+    destination_port_ranges    = ["80"]
+    description                = "Azure Instance Metadata service endpoint, Session host health monitoring"
+  }
+
+  security_rule {
+    name                       = "avd-avd-AllowAnyToSXSOut-TCPOutbound"
+    priority                   = 1999
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "Storage" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Agent and side-by-side (SXS) stack updates"
+  }
+
+  security_rule {
+    name                       = "avd-AllowAnyToWindowsVDIOut-TCPOutbound"
+    priority                   = 1998
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "WindowsVirtualDesktop" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Service Traffic"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAuthMsOnlineOut-TCP-Outbound"
+    priority                   = 2994
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureActiveDirectory" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Authentication to Microsoft Online Services, Sign in to Microsoft Online Services and Microsoft 365"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAZEventHubOut-TCP-Outbound"
+    priority                   = 2989
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "EventHub" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Diagnostic settings"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAZMktPlaceOut-TCP-Outbound"
+    priority                   = 2991
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureFrontDoor.Frontend" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Azure Marketplace"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAZMonitorOut-TCP-Outbound"
+    priority                   = 2990
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureMonitor" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Agent traffic, Diagnostic output"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToAZportalSupportOut-TCP-Outbound"
+    priority                   = 2993
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureCloud" # Service Tag
+    destination_port_ranges    = ["443"]
+    description                = "Azure portal support"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToCrtOut-TCP-Outbound"
+    priority                   = 2992
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefix = "AzureFrontDoor.FirstParty" # Service Tag
+    destination_port_ranges    = ["80"]
+    description                = "Certificates"
+  }
+
+  security_rule {
+    name                       = "avd-AllowToRDPShortpathOut-TCP-Outbound"
+    priority                   = 2995
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Udp"
+    source_address_prefix      = "192.168.8.0/22"
+    source_port_range          = "*"
+    destination_address_prefixes = ["20.202.0.0/16", "51.5.0.0/16"]
+    destination_port_ranges    = ["3478"]
+    description                = "STUN/TURN relay  for RDP Shortpath over public network"
+  }
+
 
   tags = {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service}-mgmt"

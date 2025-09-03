@@ -138,7 +138,7 @@ resource "azurerm_local_network_gateway" "aws_lgw1" {
   name                = "ims-prd-conn-ne-lgw-aws-01"
   location            = var.location
   resource_group_name = var.vnet_resource_group
-  gateway_address     = "34.247.16.167"
+  gateway_address     = "34.241.234.161"
   address_space       = ["10.0.0.0/14"]
   bgp_settings {
     asn           = 64512
@@ -152,7 +152,7 @@ resource "azurerm_local_network_gateway" "aws_lgw2" {
   name                = "ims-prd-conn-ne-lgw-aws-02"
   location            = var.location
   resource_group_name = var.vnet_resource_group
-  gateway_address     = "99.81.84.117"
+  gateway_address     = "34.251.165.194"
   address_space       = ["10.0.0.0/14"]
   bgp_settings {
     asn           = 64512
@@ -166,7 +166,7 @@ resource "azurerm_local_network_gateway" "aws_lgw3" {
   name                = "ims-prd-conn-ne-lgw-aws-03"
   location            = var.location
   resource_group_name = var.vnet_resource_group
-  gateway_address     = "52.51.99.83"
+  gateway_address     = "54.229.58.227"
   address_space       = ["10.0.0.0/14"]
   bgp_settings {
     asn           = 64512
@@ -180,7 +180,7 @@ resource "azurerm_local_network_gateway" "aws_lgw4" {
   name                = "ims-prd-conn-ne-lgw-aws-04"
   location            = var.location
   resource_group_name = var.vnet_resource_group
-  gateway_address     = "52.213.133.44"
+  gateway_address     = "63.34.101.253"
   address_space       = ["10.0.0.0/14"]
   bgp_settings {
     asn           = 64512
