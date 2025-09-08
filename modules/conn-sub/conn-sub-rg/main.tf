@@ -34,5 +34,14 @@ resource "azurerm_resource_group" "conn" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-${var.suffix}"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }

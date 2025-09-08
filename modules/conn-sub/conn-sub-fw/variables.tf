@@ -101,5 +101,6 @@ variable "service" { default = "vnet" }
 variable "service2" { default = "pip" }
 variable "hubspoke" { default = "hub" }
 variable "azfw" { default = "afw" }
+variable "azfp" { default = "afwp}
 variable "suffix" { default = "network" }
 variable "ipg" { default = "ZscallerIPg" }

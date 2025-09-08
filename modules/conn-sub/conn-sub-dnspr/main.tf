@@ -35,6 +35,15 @@ resource "azurerm_private_dns_resolver" "dnspr" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service3}-01"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 # Create DNS Private Resolver Inbound Endpoint
@@ -54,6 +63,15 @@ resource "azurerm_private_dns_resolver_inbound_endpoint" "inboundep" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.inout}-${var.service3}"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 
 }
@@ -69,6 +87,15 @@ resource "azurerm_private_dns_resolver_outbound_endpoint" "outboundep" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.inout2}-${var.service3}"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 
@@ -85,6 +112,15 @@ resource "azurerm_private_dns_resolver_dns_forwarding_ruleset" "dnsfrs" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-dnsfrs-01"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 

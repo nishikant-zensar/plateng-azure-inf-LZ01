@@ -44,6 +44,15 @@ resource "azurerm_public_ip" "pipvpng01" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service2}-vpng-01"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 # 2. Create "ims-prd-conn-ne-pip-vpng-02" Public IP for VPN Gateway
@@ -70,6 +79,15 @@ resource "azurerm_public_ip" "pipvpng02" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service2}-vpng-02"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 
@@ -130,6 +148,15 @@ resource "azurerm_virtual_network_gateway" "vpn_gw" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-vpng-01"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 # 2. Create Local Network Gateway 1 on VPN Gateway
@@ -145,6 +172,21 @@ resource "azurerm_local_network_gateway" "aws_lgw1" {
     bgp_peering_address = "169.254.21.21"
     peer_weight   = 0
   }
+
+  tags = {
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service3}-${var.suffix2}-01"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
+  }
 }
 
 # 3. Create Local Network Gateway 2 on VPN Gateway
@@ -158,6 +200,21 @@ resource "azurerm_local_network_gateway" "aws_lgw2" {
     asn           = 64512
     bgp_peering_address = "169.254.22.21"
     peer_weight   = 0
+  }
+
+  tags = {
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service3}-${var.suffix2}-02"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 
@@ -173,6 +230,21 @@ resource "azurerm_local_network_gateway" "aws_lgw3" {
     bgp_peering_address = "169.254.21.5"
     peer_weight   = 0
   }
+
+  tags = {
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service3}-${var.suffix2}-03"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
+  }
 }
 
 # 5. Create Local Network Gateway 4 on VPN Gateway
@@ -186,6 +258,21 @@ resource "azurerm_local_network_gateway" "aws_lgw4" {
     asn           = 64512
     bgp_peering_address = "169.254.22.5"
     peer_weight   = 0
+  }
+
+  tags = {
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service3}-${var.suffix2}-04"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 
@@ -210,6 +297,15 @@ resource "azurerm_local_network_gateway" "aws_lgw4" {
  # Name = "${var.org}-${var.env}-${var.sub}-${var.region}-vnc-01"
 #	Environment = var.env
 #	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+# critical  = "true"
+# Application = ""
+# Owner = ""
+# CostCentre = ""
+# Datadog = ""
+# SNApplicationService =""
+# SNResolver = ""
+# SNEnvironment = ""
+# ServiceCategory = ""
  # }
 
 #}
@@ -234,6 +330,15 @@ resource "azurerm_local_network_gateway" "aws_lgw4" {
  # Name = "${var.org}-${var.env}-${var.sub}-${var.region}-vnc-02"
 #	Environment = var.env
 #	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+# critical  = "true"
+# Application = ""
+# Owner = ""
+# CostCentre = ""
+# Datadog = ""
+# SNApplicationService =""
+# SNResolver = ""
+# SNEnvironment = ""
+# ServiceCategory = ""
  # }
 # }
 
@@ -258,6 +363,15 @@ resource "azurerm_local_network_gateway" "aws_lgw4" {
  # Name = "${var.org}-${var.env}-${var.sub}-${var.region}-vnc-03"
 #	Environment = var.env
 #	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+# critical  = "true"
+# Application = ""
+# Owner = ""
+# CostCentre = ""
+# Datadog = ""
+# SNApplicationService =""
+# SNResolver = ""
+# SNEnvironment = ""
+# ServiceCategory = ""
  # }
 # }
 
@@ -282,5 +396,14 @@ resource "azurerm_local_network_gateway" "aws_lgw4" {
  # Name = "${var.org}-${var.env}-${var.sub}-${var.region}-vnc-04"
 #	Environment = var.env
 #	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+# critical  = "true"
+# Application = ""
+# Owner = ""
+# CostCentre = ""
+# Datadog = ""
+# SNApplicationService =""
+# SNResolver = ""
+# SNEnvironment = ""
+# ServiceCategory = ""
  # }
 # }

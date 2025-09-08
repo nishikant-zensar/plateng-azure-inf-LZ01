@@ -327,6 +327,15 @@ resource "azurerm_route_table" "ims-prd-mgmt-ne-rt-keyvault" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service2}-keyvault"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
   # depends_on = [
   #   azurerm_resource_group.ims-prd-mgmt-ne-rg-network
@@ -369,6 +378,15 @@ resource "azurerm_route_table" "ims-prd-mgmt-ne-rt-security" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service2}-security"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
   # depends_on = [
   #   azurerm_resource_group.ims-prd-mgmt-ne-rg-network
@@ -411,6 +429,15 @@ resource "azurerm_route_table" "ims-prd-mgmt-ne-rt-system" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service2}-system"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
   # depends_on = [
   #   azurerm_resource_group.ims-prd-mgmt-ne-rg-network

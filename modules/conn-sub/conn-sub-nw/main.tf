@@ -112,6 +112,15 @@ terraform {
     Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service3}-dnsprin"
     Environment = var.env
     DateCreated = formatdate("YYYY-MM-DD", timestamp())
+    critical  = "true"
+    Application = ""
+    Owner = ""
+    CostCentre = ""
+    Datadog = ""
+    SNApplicationService =""
+    SNResolver = ""
+    SNEnvironment = ""
+    ServiceCategory = ""
     }
   }
 
@@ -208,6 +217,15 @@ terraform {
     Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service3}-dnsprout"
     Environment = var.env
     DateCreated = formatdate("YYYY-MM-DD", timestamp())
+    critical  = "true"
+    Application = ""
+    Owner = ""
+    CostCentre = ""
+    Datadog = ""
+    SNApplicationService =""
+    SNResolver = ""
+    SNEnvironment = ""
+    ServiceCategory = ""
     }
   }
 
@@ -277,6 +295,15 @@ terraform {
     Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service3}-pep"
     Environment = var.env
     DateCreated = formatdate("YYYY-MM-DD", timestamp())
+    critical  = "true"
+    Application = ""
+    Owner = ""
+    CostCentre = ""
+    Datadog = ""
+    SNApplicationService =""
+    SNResolver = ""
+    SNEnvironment = ""
+    ServiceCategory = ""
     }
  }
 
@@ -338,6 +365,15 @@ resource "azurerm_route_table" "ims-prd-conn-ne-rt-vpng" {
     Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service4}-vpng"
     Environment = var.env
     DateCreated = formatdate("YYYY-MM-DD", timestamp())
+    critical  = "true"
+    Application = ""
+    Owner = ""
+    CostCentre = ""
+    Datadog = ""
+    SNApplicationService =""
+    SNResolver = ""
+    SNEnvironment = ""
+    ServiceCategory = ""
     }
 }
 
@@ -381,6 +417,15 @@ resource "azurerm_route_table" "ims-prd-conn-ne-rt-dnsprin" {
     Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service4}-dnsprin"
     Environment = var.env
     DateCreated = formatdate("YYYY-MM-DD", timestamp())
+    critical  = "true"
+    Application = ""
+    Owner = ""
+    CostCentre = ""
+    Datadog = ""
+    SNApplicationService =""
+    SNResolver = ""
+    SNEnvironment = ""
+    ServiceCategory = ""
     }
 }
 
@@ -425,6 +470,15 @@ resource "azurerm_route_table" "ims-prd-conn-ne-rt-dnsprout" {
     Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service4}-dnsprout"
     Environment = var.env
     DateCreated = formatdate("YYYY-MM-DD", timestamp())
+    critical  = "true"
+    Application = ""
+    Owner = ""
+    CostCentre = ""
+    Datadog = ""
+    SNApplicationService =""
+    SNResolver = ""
+    SNEnvironment = ""
+    ServiceCategory = ""
     }
 }
 

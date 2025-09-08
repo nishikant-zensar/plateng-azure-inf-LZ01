@@ -30,6 +30,15 @@ resource "azurerm_resource_group" "avd" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-${var.suffix}"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 
@@ -44,6 +53,15 @@ resource "azurerm_resource_group" "avdpool" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-pool"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 # 2. Create Personal RG in AVD MG
@@ -56,5 +74,14 @@ resource "azurerm_resource_group" "avdpsnl" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-psnl"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }

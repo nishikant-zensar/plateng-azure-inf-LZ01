@@ -39,6 +39,15 @@ resource "azurerm_virtual_network" "mgmtvnet" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service}-01"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 
 }

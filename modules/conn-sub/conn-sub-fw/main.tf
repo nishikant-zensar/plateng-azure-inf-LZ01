@@ -48,6 +48,15 @@ resource "azurerm_public_ip" "pipafw01" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.service2}-${var.azfw}-01"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 
 }
@@ -74,6 +83,15 @@ resource "azurerm_ip_group" "ims-prd-conn-ne-ZscallerIPg-L3" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.ipg}-L3"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 
@@ -96,6 +114,15 @@ resource "azurerm_ip_group" "ims-prd-conn-ne-ZscallerIPg-L5" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.ipg}-L5"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 
@@ -118,6 +145,15 @@ resource "azurerm_ip_group" "ims-prd-conn-ne-ZscallerIPg-M1" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.ipg}-M1"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
   
 }
@@ -140,6 +176,15 @@ resource "azurerm_ip_group" "ims-prd-conn-ne-ZscallerIPg-M2" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.ipg}-M2"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 
@@ -165,6 +210,21 @@ resource "azurerm_firewall_policy" "fw_policy" {
   # tls_inspection {
   #  enabled = false
   # }
+
+  tags = {
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.azfp}-01"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
+  }
 }
 
 # 2. Create Azure Firewall
@@ -181,6 +241,21 @@ resource "azurerm_firewall" "fw" {
     name                 = "firewallipconfig"
     subnet_id            = "/subscriptions/ecd60543-12a0-4899-9e5f-21ec01592207/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/virtualNetworks/ims-prd-conn-ne-vnet-hub-01/subnets/AzureFirewallSubnet"
     public_ip_address_id = "/subscriptions/ecd60543-12a0-4899-9e5f-21ec01592207/resourceGroups/ims-prd-conn-ne-rg-network/providers/Microsoft.Network/publicIPAddresses/ims-prd-conn-ne-pip-afw-01"
+  }
+
+  tags = {
+  Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.azfw}-01"
+	Environment = var.env
+	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 

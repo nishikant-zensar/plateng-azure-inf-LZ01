@@ -30,6 +30,15 @@ resource "azurerm_resource_group" "mgmt" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-${var.suffix}"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 
@@ -44,6 +53,15 @@ resource "azurerm_resource_group" "mgmtdef" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-defender"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 # 2. Create Key Vault RG in Management MG
@@ -56,6 +74,15 @@ resource "azurerm_resource_group" "mgmtkv" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-keyvault"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 # 3. Create log-security RG in Management MG
@@ -68,6 +95,15 @@ resource "azurerm_resource_group" "mgmtlsec" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-log-security"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 # 4. Create log-system RG in Management MG
@@ -80,6 +116,15 @@ resource "azurerm_resource_group" "mgmtlsys" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-log-system"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 # 5. Create Purview RG in Management MG
@@ -92,6 +137,15 @@ resource "azurerm_resource_group" "mgmtpur" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-purview"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
 # 6. Create storage RG in Management MG
@@ -104,5 +158,14 @@ resource "azurerm_resource_group" "mgmtst" {
   Name = "${var.org}-${var.env}-${var.sub}-${var.region}-${var.type}-storage"
 	Environment = var.env
 	DateCreated = formatdate("YYYY-MM-DD", timestamp())
+  critical  = "true"
+  Application = ""
+  Owner = ""
+  CostCentre = ""
+  Datadog = ""
+  SNApplicationService =""
+  SNResolver = ""
+  SNEnvironment = ""
+  ServiceCategory = ""
   }
 }
